@@ -24,7 +24,7 @@ public class App
 
         while (running)
         {
-            // Console.Clear();
+            Console.Clear();
 
             AnsiConsole.Write(
                 new FigletText("JFF Agent Runner")

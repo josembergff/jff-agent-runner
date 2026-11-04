@@ -17,7 +17,6 @@ var dataDirectory = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
     ".config",
     "jff-agent-runner");
-Console.WriteLine($"Data Directory: {dataDirectory}");
 Directory.CreateDirectory(dataDirectory);
 var databasePath = Path.Combine(dataDirectory, "database.db");
 builder.Services.AddDbContext<JffAgentDbContext>(options =>

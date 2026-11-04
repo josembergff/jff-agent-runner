@@ -12,6 +12,8 @@ public class JffAgentDbContextFactory : IDesignTimeDbContextFactory<JffAgentDbCo
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             ".config",
             "jff-agent-runner");
+        Console.Clear();
+        Console.WriteLine($"Data directory factory: {dataDirectory}");
         Directory.CreateDirectory(dataDirectory);
 
         var options = new DbContextOptionsBuilder<JffAgentDbContext>()
