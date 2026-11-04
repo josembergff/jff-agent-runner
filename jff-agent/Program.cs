@@ -1,7 +1,9 @@
 ﻿
 using domain.interfaces.services;
+using Domain.Interfaces.Infrastructure;
 using Domain.Services;
 using Infra.Context;
+using Infra.Tmux;
 using JffCsharpTools.Domain.Interfaces.Repositories;
 using JffCsharpTools10.Infra.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -21,8 +23,8 @@ builder.Services.AddDbContext<JffAgentDbContext>(options =>
     options.UseSqlite($"Data Source={databasePath}"));
 
 // Infrastructure
-// builder.Services.AddSingleton<IGitHubCli, GitHubCli>();
-// builder.Services.AddSingleton<ITmuxExecutor, TmuxExecutor>();
+builder.Services.AddSingleton<IGitHubCli, GitHubCli>();
+builder.Services.AddSingleton<ITmuxExecutor, TmuxExecutor>();
 builder.Services.AddSingleton<IDefaultRepository, DefaultRepository<JffAgentDbContext>>();
 
 // Domain / Services
