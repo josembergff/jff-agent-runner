@@ -1,4 +1,5 @@
 using domain.interfaces.services;
+using JffCsharpTools.Application.Common;
 using Spectre.Console;
 
 public class App
@@ -41,31 +42,47 @@ public class App
                         "Histórico",
                         "Sair"));
 
+            var result = new Result();
+
             switch (option)
             {
                 case "Projetos":
-                    await projectService.ShowMenuAsync();
+                    result = await projectService.ShowMenuAsync();
                     break;
 
                 case "Agentes":
-                    await agentService.ShowMenuAsync();
+                    result = await agentService.ShowMenuAsync();
                     break;
 
                 case "Executar Issue":
-                    await executionService.StartMenuAsync();
+                    result = await executionService.StartMenuAsync();
                     break;
 
                 case "Execuções em andamento":
-                    await executionService.ShowRunningAsync();
+                    result = await executionService.ShowRunningAsync();
                     break;
 
                 case "Histórico":
-                    await executionService.ShowHistoryAsync();
+                    result = await executionService.ShowHistoryAsync();
                     break;
 
                 case "Sair":
                     running = false;
                     break;
+            }
+
+            if (!result.Success)
+            {
+                Console.WriteLine(result.Message);
+                if (result.Messages.Any())
+                {
+                    Console.WriteLine("Detalhes do erro:");
+                    foreach (var message in result.Messages)
+                    {
+                        Console.WriteLine(message);
+                    }
+                }
+                break;
             }
         }
     }

@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="jff-csharp-tools-10" Version="1.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
   </ItemGroup>
 
   <PropertyGroup>
