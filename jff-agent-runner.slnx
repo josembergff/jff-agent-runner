@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="jff-agent-domain/jff-agent-domain.csproj" />
+  <Project Path="jff-agent-infra/jff-agent-infra.csproj" />
   <Project Path="jff-agent/jff-agent.csproj" />
 </Solution>
