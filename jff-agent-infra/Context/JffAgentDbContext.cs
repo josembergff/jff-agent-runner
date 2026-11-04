@@ -6,7 +6,7 @@ namespace Infra.Context;
 public class JffAgentDbContext(DbContextOptions<JffAgentDbContext> options)
     : DbContext(options)
 {
-    public virtual DbSet<Project> Projects { get; set; }
-    public virtual DbSet<Agent> Agents { get; set; }
-    public virtual DbSet<Execution> Executions { get; set; }
+    public DbSet<Project> Projects => Set<Project>();
+    public DbSet<Agent> Agents => Set<Agent>();
+    public DbSet<Execution> Executions => Set<Execution>();
 }
