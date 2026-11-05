@@ -89,6 +89,11 @@ public class ProjectMenu(IDefaultService defaultService, ILogger<ProjectMenu> lo
             LocalPath = AnsiConsole.Ask<string>("Local path:")
         };
 
+        if (!project.RepositoryUrl.Contains("https://github.com/"))
+        {
+            project.RepositoryUrl = $"https://github.com/{project.RepositoryUrl}";
+        }
+
         project.LocalPath = verifyAndCreateDirectory(project.LocalPath);
 
         await defaultService.Create<Project>(0, project, false);
