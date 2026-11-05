@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
 public class ExecutionMenu(
-    IDefaultService defaultService, ILogger<ExecutionMenu> logger, IExecutionService executionService, IGitHubCli gitHubCli)
+    IDefaultService defaultService, ILogger<ExecutionMenu> logger, IExecutionService executionService, IGitHubCli gitHubCli, ITmuxExecutor tmuxExecutor)
 {
 
     public async Task<Result> ShowMenuAsync()
@@ -33,6 +33,7 @@ public class ExecutionMenu(
                             "List executions by agent",
                             "List executions by project",
                             "List running executions",
+                            "View running",
                             "Cancel execution",
                             "Delete execution",
                             "Back"));
@@ -57,6 +58,10 @@ public class ExecutionMenu(
 
                     case "List running executions":
                         await ListRunningAsync();
+                        break;
+
+                    case "View running":
+                        await ViewRunningAsync();
                         break;
 
                     case "Cancel execution":
@@ -290,6 +295,50 @@ public class ExecutionMenu(
     private async Task ListRunningAsync()
     {
         await ListAsync(f => f.Status == ExecutionStatusEnum.Running);
+    }
+
+    private async Task ViewRunningAsync()
+    {
+        var executions = await defaultService.Get<Execution>(
+            f => f.Status == ExecutionStatusEnum.Running || f.Status == ExecutionStatusEnum.Pending,
+            new string[] { "Project", "Agent" });
+
+        if (executions.Value.Count() == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]No executions are running or pending.[/]");
+            Console.ReadKey(true);
+            return;
+        }
+
+        var execution = AnsiConsole.Prompt(
+            new SelectionPrompt<Execution>()
+                .Title("Select an execution:")
+                .UseConverter(e => Markup.Escape(
+                    $"{e.SessionName} - {e.Project.Name} - {e.Agent.Name} - Issue #{e.IssueNumber} - {e.Status}"))
+                .AddChoices(executions.Value));
+
+        var output = await tmuxExecutor.GetOutputAsync(execution.SessionName);
+
+        if (output.Success)
+        {
+            var content = output.Value.TrimEnd();
+
+            AnsiConsole.Write(new Panel(new Text(content.Length > 0 ? content : "No output yet."))
+            {
+                Header = new PanelHeader(Markup.Escape($"{execution.SessionName} - {execution.Status}")),
+                Border = BoxBorder.Rounded,
+                Expand = true
+            });
+        }
+        else
+        {
+            logger.LogError(output.Error, output.StackTrace);
+            AnsiConsole.MarkupLine(
+                $"[red]Error retrieving session output: {Markup.Escape(output.Error ?? "Unknown error.")}[/]");
+        }
+
+        AnsiConsole.MarkupLine("\n[grey]Press any key to continue.[/]");
+        Console.ReadKey(true);
     }
 
     private async Task CancelAsync()
