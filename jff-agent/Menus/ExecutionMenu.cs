@@ -317,6 +317,32 @@ public class ExecutionMenu(
                     $"{e.SessionName} - {e.Project.Name} - {e.Agent.Name} - Issue #{e.IssueNumber} - {e.Status}"))
                 .AddChoices(executions.Value));
 
+        var hasSession = await tmuxExecutor.HasSessionAsync(execution.SessionName);
+
+        if (!hasSession.Success)
+        {
+            logger.LogError(hasSession.Error, hasSession.StackTrace);
+            AnsiConsole.MarkupLine(
+                $"[red]Error checking session: {Markup.Escape(hasSession.Error ?? "Unknown error.")}[/]");
+            Console.ReadKey(true);
+            return;
+        }
+
+        if (!hasSession.Value)
+        {
+            execution.Status = ExecutionStatusEnum.Failed;
+            execution.FinishedAt = DateTime.UtcNow;
+            execution.UpdatedAt = DateTime.UtcNow;
+            execution.SessionDetails = "Session was closed.";
+            await defaultService.UpdateByKey<Execution, int>(0, execution, execution.Id, false);
+            await defaultService.SaveChanges();
+
+            AnsiConsole.MarkupLine(
+                $"[yellow]Session {Markup.Escape(execution.SessionName)} was closed. Execution marked as failed.[/]");
+            Console.ReadKey(true);
+            return;
+        }
+
         var output = await tmuxExecutor.GetOutputAsync(execution.SessionName);
 
         if (output.Success)

@@ -34,6 +34,11 @@ public class TmuxExecutor : ITmuxExecutor
             await ExecuteAsync("has-session", "-t", sessionName);
             return Result<bool>.Ok(true);
         }
+        catch (InvalidOperationException)
+        {
+            // tmux ran and exited non-zero: the session (or the tmux server) does not exist.
+            return Result<bool>.Ok(false);
+        }
         catch (Exception ex)
         {
             return Result<bool>.Fail(ex);
