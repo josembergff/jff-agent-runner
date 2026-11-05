@@ -38,24 +38,30 @@ public class ExecutionService : DefaultService, IExecutionService
             throw new DomainException("Project directory does not exist.");
 
         // 4. Generate session name
+        var sessionName = $"jff-{execution.Id}";
+        execution.SessionName = sessionName;
         execution.SesionAgentCommand = agent.Command;
         execution.SessionProjectPath = project.LocalPath;
         execution.Status = ExecutionStatusEnum.Pending;
         execution.CreatedAt = DateTime.UtcNow;
 
         // 5. Save execution before starting the agent
-        await defaultRepository.Create(execution, true);
-        var sessionName = $"jff-{execution.Id:N}";
+        var resultSave = await defaultRepository.Create(execution, true);
+        sessionName = $"jff-{resultSave.Id}";
         execution.SessionName = sessionName;
-        await defaultRepository.UpdateByKey(execution, execution.Id, true);
+        await defaultRepository.UpdateByKey(execution, resultSave.Id, true);
+        execution = await defaultRepository.GetByKey<Execution, int>(resultSave.Id);
 
         try
         {
             // 6. Start agent session
-            await tmuxExecutor.StartSessionAsync(
+            var resultTmux = await tmuxExecutor.StartSessionAsync(
                 sessionName,
                 project.LocalPath,
                 agent.Command);
+
+            if (!resultTmux.Success)
+                throw new DomainException(resultTmux.Message);
 
             // 7. Update execution status
             execution.Status = ExecutionStatusEnum.Running;

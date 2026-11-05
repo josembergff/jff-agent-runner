@@ -7,6 +7,7 @@ using Domain.Enums;
 using Domain.Interfaces.Infrastructure;
 using JffCsharpTools.Application.Common;
 using JffCsharpTools.Application.Interfaces;
+using JffCsharpTools.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
@@ -128,6 +129,9 @@ public class ExecutionMenu(
             var issueResult = await gitHubCli.GetIssueAsync(
                 project.RepositoryUrl,
                 issueNumber);
+
+            if (!issueResult.Success)
+                throw new DomainException(issueResult.Message);
             issue = issueResult.Value;
         }
         catch (Exception ex)
