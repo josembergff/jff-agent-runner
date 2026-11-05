@@ -36,6 +36,44 @@ public class GitHubCli : IGitHubCli
         }
     }
 
+    public async Task<Result<List<GitHubIssueDto>>> ListOpenIssuesAsync(
+        string repositoryUrl)
+    {
+        try
+        {
+            // Sem --repo, o gh usaria o repositório do diretório atual.
+            ArgumentException.ThrowIfNullOrWhiteSpace(repositoryUrl);
+
+            // O gh retorna apenas 30 issues por padrão; o limite máximo garante a lista completa.
+            var output = await ExecuteAsync(
+                "issue",
+                "list",
+                "--repo",
+                repositoryUrl,
+                "--state",
+                "open",
+                "--limit",
+                int.MaxValue.ToString(),
+                "--json",
+                "number,title,body,state,url,author,projectItems",
+                "--jq",
+                """[.[] | select(any(.projectItems[]?; .status.name == "Ready"))]""");
+
+            var issues = JsonSerializer.Deserialize<List<GitHubIssueDto>>(
+                output,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? [];
+
+            return Result<List<GitHubIssueDto>>.Ok(issues);
+        }
+        catch (Exception ex)
+        {
+            return Result<List<GitHubIssueDto>>.Fail(ex);
+        }
+    }
+
     private static async Task<string> ExecuteAsync(
         params string[] arguments)
     {

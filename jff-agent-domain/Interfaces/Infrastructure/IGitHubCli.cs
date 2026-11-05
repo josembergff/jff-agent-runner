@@ -8,4 +8,7 @@ public interface IGitHubCli
     Task<Result<GitHubIssueDto>> GetIssueAsync(
         string repository,
         int issueNumber);
+
+    Task<Result<List<GitHubIssueDto>>> ListOpenIssuesAsync(
+        string repositoryUrl);
 }

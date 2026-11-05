@@ -117,25 +117,24 @@ public class ExecutionMenu(
                 .UseConverter(a => a.Name)
                 .AddChoices(agents.Value));
 
-        // 3. Enter the issue number
-        var issueNumber = AnsiConsole.Ask<int>(
-            "GitHub issue number:");
-
-        // 4. Retrieve the issue
+        // 3. Select an issue number
         GitHubIssueDto? issue;
 
         try
         {
-            var issueResult = await gitHubCli.GetIssueAsync(
-                project.RepositoryUrl,
-                issueNumber);
+            var issueResult = await gitHubCli.ListOpenIssuesAsync(project.RepositoryUrl);
 
             if (!issueResult.Success)
             {
                 logger.LogError(issueResult.Error, issueResult.StackTrace);
                 throw new DomainException(issueResult.Error);
             }
-            issue = issueResult.Value;
+
+            issue = AnsiConsole.Prompt(
+                new SelectionPrompt<GitHubIssueDto>()
+                    .Title("Select an issue:")
+                    .UseConverter(a => a.Title)
+                    .AddChoices(issueResult.Value));
         }
         catch (Exception ex)
         {
@@ -153,7 +152,7 @@ public class ExecutionMenu(
             return;
         }
 
-        // 5. Exibir detalhes
+        // 4. Exibir detalhes
         var panel = new Panel(
             new Markup(
                 $"[bold]{Markup.Escape(issue.Title)}[/]\n\n" +
@@ -173,11 +172,11 @@ public class ExecutionMenu(
         AnsiConsole.MarkupLine(
             $"Agent: [green]{Markup.Escape(agent.Name)}[/]");
 
-        // 6. Confirm the execution
+        // 5. Confirm the execution
         if (!AnsiConsole.Confirm("Do you want to start this execution?"))
             return;
 
-        // 7. Create the execution
+        // 6. Create the execution
         try
         {
             await AnsiConsole.Status()
