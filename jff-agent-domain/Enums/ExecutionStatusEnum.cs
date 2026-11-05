@@ -11,5 +11,7 @@ public enum ExecutionStatusEnum
     [Description("Completed")]
     Completed,
     [Description("Failed")]
-    Failed
+    Failed,
+    [Description("Cancelled")]
+    Cancelled
 }
