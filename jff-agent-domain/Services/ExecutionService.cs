@@ -67,6 +67,7 @@ public class ExecutionService : DefaultService, IExecutionService
             execution.Status = ExecutionStatusEnum.Running;
             execution.StartedAt = DateTime.UtcNow;
             execution.UpdatedAt = DateTime.UtcNow;
+            execution.SessionDetails = $"Execution started by {agent.Name} in session";
 
             await defaultRepository.UpdateByKey(execution, execution.Id, true);
             return Result.Ok();
