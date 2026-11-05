@@ -1,16 +1,20 @@
 using domain.interfaces.services;
 using Domain.Entities;
 using JffCsharpTools.Application.Common;
-using JffCsharpTools.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using Spectre.Console;
+
+namespace Agent.Menus;
 
 public class ProjectMenu
 {
-    private readonly IDefaultService projectService;
+    private readonly IProjectService projectService;
+    private readonly ILogger<ProjectMenu> logger;
 
-    public ProjectMenu(IDefaultService projectService)
+    public ProjectMenu(IProjectService projectService, ILogger<ProjectMenu> logger)
     {
         this.projectService = projectService;
+        this.logger = logger;
     }
     public async Task<Result> ShowMenuAsync()
     {
@@ -54,6 +58,7 @@ public class ProjectMenu
         catch (Exception ex)
         {
             running = false;
+            logger.LogError(ex, "Error while running the Projects menu.");
             return Result.Fail(ex);
         }
     }
@@ -62,12 +67,14 @@ public class ProjectMenu
     {
         var projects = await projectService.Get<Project>();
 
+        var projectList = projects.Value ?? new List<Project>();
+
         var table = new Table()
             .AddColumn("Nome")
             .AddColumn("Repositório")
             .AddColumn("Diretório");
 
-        foreach (var project in projects.Value)
+        foreach (var project in projectList)
         {
             table.AddRow(
                 project.Name,

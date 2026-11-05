@@ -4,7 +4,7 @@ using JffCsharpTools.Domain.Interfaces.Repositories;
 
 namespace Domain.Services;
 
-public class ProjectService : DefaultService<IDefaultRepository>, IProjectService
+public class ProjectService : DefaultService, IProjectService
 {
     public ProjectService(IDefaultRepository repository) : base(repository)
     {
