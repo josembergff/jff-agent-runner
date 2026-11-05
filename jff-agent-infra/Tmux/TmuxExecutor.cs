@@ -8,6 +8,9 @@ public class TmuxExecutor : ITmuxExecutor
 {
     private static readonly TimeSpan StartupGracePeriod = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan StartupPollInterval = TimeSpan.FromMilliseconds(200);
+    private static readonly TimeSpan AgentReadyTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan AgentReadyStablePeriod = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan PasteSettleDelay = TimeSpan.FromMilliseconds(500);
 
     public async Task<Result> StartSessionAsync(
         string sessionName,
@@ -28,8 +31,8 @@ public class TmuxExecutor : ITmuxExecutor
             await ExecuteAsync("new-session", "-d", "-s", sessionName, "-c", workingDirectory);
             sessionCreated = true;
 
-            await ExecuteAsync("set-option", "-w", "-t", sessionName, "remain-on-exit", "on");
-            await ExecuteAsync("respawn-pane", "-k", "-t", sessionName, "-c", workingDirectory, fullCommand);
+            await ExecuteAsync("set-option", "-w", "-t", ExactTarget(sessionName), "remain-on-exit", "on");
+            await ExecuteAsync("respawn-pane", "-k", "-t", ExactTarget(sessionName), "-c", workingDirectory, fullCommand);
 
             var deadline = DateTime.UtcNow + StartupGracePeriod;
 
@@ -38,7 +41,7 @@ public class TmuxExecutor : ITmuxExecutor
                 await Task.Delay(StartupPollInterval);
 
                 var pane = (await ExecuteAsync(
-                    "list-panes", "-t", sessionName,
+                    "list-panes", "-t", ExactTarget(sessionName),
                     "-F", "#{pane_dead}:#{pane_dead_status}")).Trim();
 
                 if (pane.StartsWith('1'))
@@ -46,7 +49,7 @@ public class TmuxExecutor : ITmuxExecutor
             }
 
             // Still alive: restore the default so the session closes when the agent exits.
-            await ExecuteAsync("set-option", "-w", "-t", sessionName, "remain-on-exit", "off");
+            await ExecuteAsync("set-option", "-w", "-t", ExactTarget(sessionName), "remain-on-exit", "off");
             return Result.Ok();
         }
         catch (Exception ex)
@@ -83,11 +86,68 @@ public class TmuxExecutor : ITmuxExecutor
             .Select(line => line.TrimEnd())
             .Where(line => line.Length > 0 && !line.StartsWith("Pane is dead")));
 
+    public async Task<Result> SendInstructionsAsync(string sessionName, string instructions)
+    {
+        try
+        {
+            await WaitForAgentReadyAsync(sessionName);
+
+            // Bracketed paste keeps the text as one message. Sending it line by line could
+            // submit each line on its own, as a newline works like Enter in an agent's prompt.
+            await ExecuteAsync("set-buffer", "-b", sessionName, "--", instructions);
+            await ExecuteAsync("paste-buffer", "-p", "-r", "-d", "-b", sessionName, "-t", ExactTarget(sessionName));
+
+            // An Enter arriving together with the paste may be taken as part of it.
+            await Task.Delay(PasteSettleDelay);
+            await ExecuteAsync("send-keys", "-t", ExactTarget(sessionName), "Enter");
+
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail(ex);
+        }
+    }
+
+    // There is no generic signal that an agent is ready, so it is considered open when its
+    // screen has content and stops changing. An agent that keeps animating gets the
+    // instructions at the timeout, as terminal applications usually buffer their input.
+    private async Task WaitForAgentReadyAsync(string sessionName)
+    {
+        var deadline = DateTime.UtcNow + AgentReadyTimeout;
+        var stableSince = DateTime.UtcNow;
+        var lastScreen = string.Empty;
+
+        while (DateTime.UtcNow < deadline)
+        {
+            var capture = await GetOutputAsync(sessionName);
+
+            if (!capture.Success)
+                throw new InvalidOperationException(
+                    $"Agent exited before receiving the instructions.\n{CleanDeadPaneOutput(lastScreen)}".TrimEnd());
+
+            var screen = capture.Value;
+
+            if (screen != lastScreen)
+            {
+                lastScreen = screen;
+                stableSince = DateTime.UtcNow;
+            }
+            else if (!string.IsNullOrWhiteSpace(screen)
+                && DateTime.UtcNow - stableSince >= AgentReadyStablePeriod)
+            {
+                return;
+            }
+
+            await Task.Delay(StartupPollInterval);
+        }
+    }
+
     public async Task<Result<bool>> HasSessionAsync(string sessionName)
     {
         try
         {
-            await ExecuteAsync("has-session", "-t", sessionName);
+            await ExecuteAsync("has-session", "-t", ExactTarget(sessionName));
             return Result<bool>.Ok(true);
         }
         catch (InvalidOperationException)
@@ -109,7 +169,7 @@ public class TmuxExecutor : ITmuxExecutor
             "capture-pane",
             "-p",
             "-S", "-100",
-            "-t", sessionName);
+            "-t", ExactTarget(sessionName));
             return Result<string>.Ok(value);
         }
         catch (Exception ex)
@@ -122,7 +182,7 @@ public class TmuxExecutor : ITmuxExecutor
     {
         try
         {
-            await ExecuteAsync("kill-session", "-t", sessionName);
+            await ExecuteAsync("kill-session", "-t", ExactTarget(sessionName));
             return Result.Ok();
         }
         catch (Exception ex)
@@ -130,6 +190,9 @@ public class TmuxExecutor : ITmuxExecutor
             return Result.Fail(ex);
         }
     }
+
+    // A plain -t matches by prefix, so "jff-1" could reach "jff-12" once "jff-1" is gone.
+    private static string ExactTarget(string sessionName) => $"={sessionName}:";
 
     private static async Task<string> ExecuteAsync(
         params string[] arguments)

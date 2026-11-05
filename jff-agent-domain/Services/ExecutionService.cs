@@ -2,6 +2,7 @@ using domain.interfaces.services;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Interfaces.Infrastructure;
+using Domain.Prompts;
 using JffCsharpTools.Application.Common;
 using JffCsharpTools.Application.Services;
 using JffCsharpTools.Domain.Exceptions;
@@ -71,11 +72,23 @@ public class ExecutionService : DefaultService, IExecutionService
                 throw new DomainException(resultTmux.Error);
             }
 
-            // 7. Update execution status
+            // 7. Send the issue instructions once the agent is open
+            var resultInstructions = await tmuxExecutor.SendInstructionsAsync(
+                sessionName,
+                IssueImplementationPrompt.Build(execution.IssueNumber));
+
+            if (!resultInstructions.Success)
+            {
+                logger.LogError("Failed to send instructions to session {SessionName}: {Error}", sessionName, resultInstructions.Error);
+                await tmuxExecutor.KillSessionAsync(sessionName);
+                throw new DomainException(resultInstructions.Error);
+            }
+
+            // 8. Update execution status
             execution.Status = ExecutionStatusEnum.Running;
             execution.StartedAt = DateTime.UtcNow;
             execution.UpdatedAt = DateTime.UtcNow;
-            execution.SessionDetails = $"Execution started by {agent.Name} in session";
+            execution.SessionDetails = $"Execution started by {agent.Name} in session with the instructions for issue #{execution.IssueNumber}";
 
             await defaultRepository.UpdateByKey(execution, execution.Id, true);
             return Result.Ok();
