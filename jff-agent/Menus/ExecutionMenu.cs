@@ -224,7 +224,9 @@ public class ExecutionMenu(
             .AddColumn("Project")
             .AddColumn("Agent")
             .AddColumn("Issue")
-            .AddColumn("Status");
+            .AddColumn("Status")
+            .AddColumn("Session Name")
+            .AddColumn("Session Details");
 
         foreach (var execution in executions.Value)
         {
@@ -233,7 +235,10 @@ public class ExecutionMenu(
                 execution.Project.Name,
                 execution.Agent.Name,
                 execution.IssueNumber.ToString(),
-                execution.Status.ToString());
+                execution.Status.ToString(),
+                execution.SessionName,
+                execution.SessionDetails
+                );
         }
 
         AnsiConsole.Write(table);
