@@ -64,11 +64,29 @@ namespace jff_agent_infra.Migrations
                     b.Property<int>("CreatorUserId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("IssueNumber")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("SesionAgentCommand")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SessionName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SessionProjectPath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("StartedAt")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
