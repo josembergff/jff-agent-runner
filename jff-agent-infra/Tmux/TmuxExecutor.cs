@@ -6,26 +6,78 @@ namespace Infra.Tmux;
 
 public class TmuxExecutor : ITmuxExecutor
 {
+    private static readonly TimeSpan StartupGracePeriod = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan StartupPollInterval = TimeSpan.FromMilliseconds(200);
+
     public async Task<Result> StartSessionAsync(
         string sessionName,
         string workingDirectory,
         string command)
     {
+        var sessionCreated = false;
+
         try
         {
-            await ExecuteAsync(
-                "new-session",
-                "-d",
-                "-s", sessionName,
-                "-c", workingDirectory,
-                command);
+            // new-session returns 0 even when its command fails right away, and the
+            // session disappears along with its output. So the pane is created first and
+            // kept after exit, which preserves the console and the exit status.
+            await ExecuteAsync("new-session", "-d", "-s", sessionName, "-c", workingDirectory);
+            sessionCreated = true;
+
+            await ExecuteAsync("set-option", "-w", "-t", sessionName, "remain-on-exit", "on");
+            await ExecuteAsync("respawn-pane", "-k", "-t", sessionName, "-c", workingDirectory, command);
+
+            var deadline = DateTime.UtcNow + StartupGracePeriod;
+
+            while (DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(StartupPollInterval);
+
+                var pane = (await ExecuteAsync(
+                    "list-panes", "-t", sessionName,
+                    "-F", "#{pane_dead}:#{pane_dead_status}")).Trim();
+
+                if (pane.StartsWith('1'))
+                    return await FinishExitedSessionAsync(sessionName, pane[2..]);
+            }
+
+            // Still alive: restore the default so the session closes when the agent exits.
+            await ExecuteAsync("set-option", "-w", "-t", sessionName, "remain-on-exit", "off");
             return Result.Ok();
         }
         catch (Exception ex)
         {
+            // A failed new-session may mean the name is taken by a session that is not ours.
+            if (sessionCreated)
+                await KillSessionAsync(sessionName);
+
             return Result.Fail(ex);
         }
     }
+
+    private async Task<Result> FinishExitedSessionAsync(string sessionName, string exitStatus)
+    {
+        var output = await GetOutputAsync(sessionName);
+        await KillSessionAsync(sessionName);
+
+        if (exitStatus == "0")
+            return Result.Ok();
+
+        var status = exitStatus.Length > 0 ? exitStatus : "unknown";
+        var console = output.Success
+            ? CleanDeadPaneOutput(output.Value)
+            : $"Could not read the console: {output.Error}";
+
+        return Result.Fail(new InvalidOperationException(
+            $"Agent command exited with status {status}.\n{console}".TrimEnd()));
+    }
+
+    // Removes the padding of the empty screen and the status line tmux adds to a dead pane.
+    private static string CleanDeadPaneOutput(string output) =>
+        string.Join('\n', output
+            .Split('\n')
+            .Select(line => line.TrimEnd())
+            .Where(line => line.Length > 0 && !line.StartsWith("Pane is dead")));
 
     public async Task<Result<bool>> HasSessionAsync(string sessionName)
     {

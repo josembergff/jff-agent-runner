@@ -66,7 +66,7 @@ public class ExecutionService : DefaultService, IExecutionService
 
             if (!resultTmux.Success)
             {
-                logger.LogError(resultTmux.Error, resultTmux.StackTrace);
+                logger.LogError("Failed to start session {SessionName}: {Error}", sessionName, resultTmux.Error);
                 throw new DomainException(resultTmux.Error);
             }
 

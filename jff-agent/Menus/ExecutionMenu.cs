@@ -196,7 +196,7 @@ public class ExecutionMenu(
                     });
                     if (!resultCreate.Success)
                     {
-                        logger.LogError(resultCreate.Error, resultCreate.StackTrace);
+                        logger.LogError("Failed to create execution: {Error}", resultCreate.Error);
                         throw new DomainException(resultCreate.Error);
                     }
                 });
@@ -242,7 +242,7 @@ public class ExecutionMenu(
                 execution.IssueNumber.ToString(),
                 execution.Status.ToString(),
                 execution.SessionName,
-                execution.SessionDetails
+                Markup.Escape(execution.SessionDetails)
                 );
         }
 
