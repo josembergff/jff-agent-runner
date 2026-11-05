@@ -6,16 +6,19 @@ using JffCsharpTools.Application.Common;
 using JffCsharpTools.Application.Services;
 using JffCsharpTools.Domain.Exceptions;
 using JffCsharpTools.Domain.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Domain.Services;
 
 public class ExecutionService : DefaultService, IExecutionService
 {
     private readonly ITmuxExecutor tmuxExecutor;
+    private readonly ILogger<ExecutionService> logger;
 
-    public ExecutionService(IDefaultRepository repository, ITmuxExecutor tmuxExecutor) : base(repository)
+    public ExecutionService(IDefaultRepository repository, ITmuxExecutor tmuxExecutor, ILogger<ExecutionService> logger) : base(repository)
     {
         this.tmuxExecutor = tmuxExecutor;
+        this.logger = logger;
     }
     public async Task<Result> CreateAsync(Execution execution)
     {
@@ -44,6 +47,7 @@ public class ExecutionService : DefaultService, IExecutionService
         execution.SessionProjectPath = project.LocalPath;
         execution.Status = ExecutionStatusEnum.Pending;
         execution.CreatedAt = DateTime.UtcNow;
+        execution.SessionDetails = $"Session name temporary '{sessionName}'";
 
         // 5. Save execution before starting the agent
         var resultSave = await defaultRepository.Create(execution, true);
@@ -61,7 +65,10 @@ public class ExecutionService : DefaultService, IExecutionService
                 agent.Command);
 
             if (!resultTmux.Success)
-                throw new DomainException(resultTmux.Message);
+            {
+                logger.LogError(resultTmux.Error, resultTmux.StackTrace);
+                throw new DomainException(resultTmux.Error);
+            }
 
             // 7. Update execution status
             execution.Status = ExecutionStatusEnum.Running;

@@ -131,7 +131,10 @@ public class ExecutionMenu(
                 issueNumber);
 
             if (!issueResult.Success)
-                throw new DomainException(issueResult.Message);
+            {
+                logger.LogError(issueResult.Error, issueResult.StackTrace);
+                throw new DomainException(issueResult.Error);
+            }
             issue = issueResult.Value;
         }
         catch (Exception ex)
@@ -180,19 +183,26 @@ public class ExecutionMenu(
             await AnsiConsole.Status()
                 .StartAsync("Starting agent...", async ctx =>
                 {
-                    await executionService.CreateAsync(new Execution
+                    var resultCreate = await executionService.CreateAsync(new Execution
                     {
                         ProjectId = project.Id,
                         AgentId = agent.Id,
                         IssueNumber = issue.Number,
                         Status = ExecutionStatusEnum.Running
                     });
+                    if (!resultCreate.Success)
+                    {
+                        logger.LogError(resultCreate.Error, resultCreate.StackTrace);
+                        throw new DomainException(resultCreate.Error);
+                    }
                 });
             AnsiConsole.MarkupLine(
+
                 "[green]Execution started successfully![/]");
         }
         catch (Exception ex)
         {
+            Console.Clear();
             AnsiConsole.MarkupLine(
                 $"[red]Error starting execution: {Markup.Escape(ex.Message)}[/]");
         }
