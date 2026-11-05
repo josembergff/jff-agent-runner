@@ -2,64 +2,79 @@
 using System.Linq.Expressions;
 using Domain.Entities;
 using Domain.Enums;
+using JffCsharpTools.Application.Common;
 using JffCsharpTools.Application.Interfaces;
+using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
 public class ExecutionMenu(
-    IDefaultService defaultService)
+    IDefaultService defaultService, ILogger<ExecutionMenu> logger)
 {
-    public async Task ShowMenuAsync()
+    public async Task<Result> ShowMenuAsync()
     {
         var running = true;
-
-        while (running)
+        try
         {
-            Console.Clear();
-
-            var option = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("[green]Executions[/]")
-                    .AddChoices(
-                        "List executions",
-                        "List executions by agent",
-                        "List executions by project",
-                        "List running executions",
-                        "History",
-                        "Back"));
-
-            switch (option)
+            while (running)
             {
-                case "List executions":
-                    await ListAsync();
-                    break;
+                Console.Clear();
 
-                case "List executions by agent":
-                    await ListByAgentAsync();
-                    break;
+                var option = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .Title("[green]Executions[/]")
+                        .AddChoices(
+                            "List executions",
+                            "List executions by agent",
+                            "List executions by project",
+                            "List running executions",
+                            "History",
+                            "Back"));
 
-                case "List executions by project":
-                    await ListByProjectAsync();
-                    break;
+                switch (option)
+                {
+                    case "List executions":
+                        await ListAsync();
+                        break;
 
-                case "List running executions":
-                    await ListRunningAsync();
-                    break;
+                    case "List executions by agent":
+                        await ListByAgentAsync();
+                        break;
 
-                case "History":
-                    await ListAsync();
-                    break;
+                    case "List executions by project":
+                        await ListByProjectAsync();
+                        break;
 
-                case "Back":
-                    running = false;
-                    break;
+                    case "List running executions":
+                        await ListRunningAsync();
+                        break;
+
+                    case "History":
+                        await ListAsync();
+                        break;
+
+                    case "Back":
+                        running = false;
+                        break;
+                }
             }
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            running = false;
+            logger.LogError(ex, "Error while running the Projects menu.");
+            return Result.Fail(ex);
         }
     }
 
     private async Task ListAsync(
         Expression<Func<Execution, bool>>? filter = null)
     {
-        var executions = await defaultService.Get(filter, new string[] { "Project", "Agent" });
+        if (filter == null)
+        {
+            filter = f => 0 == 0;
+        }
+        var executions = await defaultService.Get(filter, new string[] { "Project", "Agent" }, false);
 
         var table = new Table()
             .AddColumn("ID")

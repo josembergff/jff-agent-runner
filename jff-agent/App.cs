@@ -7,16 +7,16 @@ public class App
 {
     private readonly ProjectMenu projectMenu;
     private readonly AgentMenu agentMenu;
-    private readonly IExecutionService executionService;
+    private readonly ExecutionMenu executionMenu;
 
     public App(
         ProjectMenu projectMenu,
         AgentMenu agentMenu,
-        IExecutionService executionService)
+        ExecutionMenu executionMenu)
     {
         this.projectMenu = projectMenu;
         this.agentMenu = agentMenu;
-        this.executionService = executionService;
+        this.executionMenu = executionMenu;
     }
 
     public async Task RunAsync()
@@ -54,7 +54,7 @@ public class App
                     break;
 
                 case "Executions":
-                    result = await executionService.StartMenuAsync();
+                    result = await executionMenu.ShowMenuAsync();
                     break;
 
                 case "Exit":
