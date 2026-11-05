@@ -30,11 +30,10 @@ Agents still run with the full access of the Linux user that started jff-agent, 
 
 ## Server requirements
 
-Install these on the server, and authenticate them under the Linux user that will run jff-agent:
+Whichever way you install jff-agent, the server needs these:
 
 | Requirement | Why it is needed |
 | --- | --- |
-| [.NET 10 SDK](https://dotnet.microsoft.com/download) | Builds and runs jff-agent |
 | `git` | Used by the agents for branches, commits and pushes |
 | [GitHub CLI](https://cli.github.com/) (`gh`) | Lists issues, and lets the agents read issues and open Pull Requests |
 | `tmux` | Hosts each agent session |
@@ -43,7 +42,46 @@ Install these on the server, and authenticate them under the Linux user that wil
 
 The last row depends on what you delegate. For an Angular frontend and a .NET backend, the server also needs Node.js and the .NET SDK.
 
-Log in to GitHub, including the project scope that the issue list needs:
+## Installation
+
+### Option 1: APT package (recommended)
+
+For Ubuntu 24.04 on x64. Other distributions and versions have not been tested.
+
+Add the repository once:
+
+```bash
+sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL https://josembergff.github.io/jff-agent-runner/public.asc \
+  | sudo gpg --dearmor --yes -o /etc/apt/keyrings/jff-agent-runner.gpg
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/jff-agent-runner.gpg] https://josembergff.github.io/jff-agent-runner ./" \
+  | sudo tee /etc/apt/sources.list.d/jff-agent-runner.list
+```
+
+Then install the package. This also installs the .NET runtime, `git` and `tmux`, plus `gh` unless you turn off recommended packages:
+
+```bash
+sudo apt update
+sudo apt install jff-agent-runner
+```
+
+To update later, run the commands above again, or update it with the rest of the system using `sudo apt update && sudo apt upgrade`. Your database is kept and migrated on the next run, and agent sessions that are already running are not affected.
+
+To remove the app, run `sudo apt remove jff-agent-runner`. This keeps your database and project directories.
+
+The repository only serves the latest version. To go back to an older one, download its `.deb` from [Releases](https://github.com/josembergff/jff-agent-runner/releases) and run `sudo apt install --allow-downgrades ./<file>.deb`.
+
+### Option 2: From source
+
+This needs the [.NET 10 SDK](https://dotnet.microsoft.com/download), and you install `git`, `gh` and `tmux` yourself. To update, run `git pull` in the clone.
+
+```bash
+git clone https://github.com/josembergff/jff-agent-runner.git
+```
+
+## Log in
+
+Under the Linux user that will run jff-agent, log in to GitHub, including the project scope that the issue list needs:
 
 ```bash
 gh auth login
@@ -53,13 +91,22 @@ gh auth setup-git
 
 Then check that each agent CLI starts and is logged in by running it once by hand.
 
-## Installation
+## Start the app
+
+If you installed the APT package, run this from any directory:
 
 ```bash
-git clone https://github.com/josembergff/jff-agent-runner.git
+jff-agent-runner
+```
+
+If you installed from source, run this from the clone:
+
+```bash
 cd jff-agent-runner
 dotnet run --project jff-agent
 ```
+
+Error log files are written to `logs/` under the directory you start the app from, so start it from one that you can write to.
 
 The database is created and migrated automatically on startup. The app needs an interactive terminal, so run it from an SSH session.
 
@@ -184,6 +231,45 @@ dotnet build jff-agent-runner.slnx
 dotnet tool restore                # installs dotnet-ef
 ./utils/new-migration.sh <Name>    # adds a migration and applies it to your local database
 ```
+
+### Publishing a release
+
+Pushing a tag such as `v1.2.3` runs [publish-apt.yml](.github/workflows/publish-apt.yml). It builds the `.deb`, tests the installation in a clean Ubuntu 24.04 container, publishes the signed APT repository to GitHub Pages and attaches the package to a GitHub Release.
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+Tag a commit on `main`. Each tag needs a higher version than the last, or servers will not update.
+
+To build a package without publishing it, run `./utils/build-deb.sh 1.2.3` on Debian or Ubuntu. The file is written to `artifacts/`.
+
+**One-time repository setup.** Run this once, before the first tag, on a machine with `gh` and `gpg`. It enables GitHub Pages and allows version tags to deploy to it, because the `github-pages` environment otherwise accepts only the default branch:
+
+```bash
+REPO=josembergff/jff-agent-runner
+
+gh api --method POST "repos/$REPO/pages" -f build_type=workflow
+
+gh api --method PUT "repos/$REPO/environments/github-pages" --input - <<'EOF'
+{"deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}}
+EOF
+gh api --method POST "repos/$REPO/environments/github-pages/deployment-branch-policies" \
+  -f name='v*' -f type=tag
+```
+
+Then create the signing key. It is generated in a temporary directory, so the only copy of the private key is the GitHub secret:
+
+```bash
+export GNUPGHOME="$(mktemp -d)"
+gpg --batch --passphrase '' --quick-generate-key "jff-agent-runner APT repository" rsa4096 sign never
+gpg --armor --export-secret-keys | gh secret set APT_GPG_PRIVATE_KEY --repo "$REPO"
+rm -rf "$GNUPGHOME"
+unset GNUPGHOME
+```
+
+If the key is ever compromised, repeat this step, publish a new tag, and run the `curl` command from [Option 1](#option-1-apt-package-recommended) again on each server.
 
 See [AGENTS.md](AGENTS.md) for architecture details and contribution rules.
 

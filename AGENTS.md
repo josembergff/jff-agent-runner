@@ -15,6 +15,7 @@ dotnet build jff-agent-runner.slnx     # build everything
 dotnet run --project jff-agent         # run the app (needs an interactive terminal)
 dotnet tool restore                    # install dotnet-ef from dotnet-tools.json
 ./utils/new-migration.sh <Name>        # add a migration AND apply it to the local database
+./utils/build-deb.sh <x.y.z>           # build the .deb into artifacts/ (Debian or Ubuntu only)
 ```
 
 There is no test project yet, so validate changes by building. Exercise behavior by running the app, which needs `tmux` and an authenticated `gh`. Say so in your report when you could not run something.
@@ -73,6 +74,10 @@ These are known gaps, not bugs to fix in passing. Change them only when the task
 ## Keeping the docs accurate
 
 `README.md` documents menu options, the prompt's branch and Pull Request rules, the issue filter, file locations and limitations. Update it in the same change when you alter any of these. `IssueImplementationPrompt` in particular is product behavior, so treat edits to it as carefully as code changes.
+
+## Packaging
+
+`utils/build-deb.sh` declares the package dependencies, and `.github/workflows/publish-apt.yml` publishes the package when a `vX.Y.Z` tag is pushed. Update the `Depends` line when the app starts needing another shared framework or system tool. It needs `aspnetcore-runtime-10.0`, not only `dotnet-runtime-10.0`, because a dependency brings in the ASP.NET Core shared framework.
 
 ## Repository rules
 
