@@ -134,6 +134,14 @@ public class ProjectMenu(IDefaultService defaultService, ILogger<ProjectMenu> lo
                 .UseConverter(p => p.Name)
                 .AddChoices(projects.Value));
 
+        var executions = await defaultService.Get<Execution>(f => f.ProjectId == project.Id);
+        if (executions.Success && executions.Value.Any())
+        {
+            AnsiConsole.MarkupLine("[yellow]This project has executions.[/]");
+            Console.ReadKey();
+            return;
+        }
+
         var confirm = AnsiConsole.Confirm(
             $"Delete project [red]{project.Name}[/]?");
 

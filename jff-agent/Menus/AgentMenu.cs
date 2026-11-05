@@ -3,6 +3,7 @@ using JffCsharpTools.Application.Interfaces;
 using Spectre.Console;
 using Microsoft.Extensions.Logging;
 using JffCsharpTools.Application.Common;
+using Domain.Entities;
 
 public class AgentMenu(IDefaultService defaultService, ILogger<AgentMenu> logger)
 {
@@ -110,6 +111,14 @@ public class AgentMenu(IDefaultService defaultService, ILogger<AgentMenu> logger
                 .Title("Select an agent:")
                 .UseConverter(a => a.Name)
                 .AddChoices(agents.Value));
+
+        var executions = await defaultService.Get<Execution>(f => f.AgentId == agent.Id);
+        if (executions.Success && executions.Value.Any())
+        {
+            AnsiConsole.MarkupLine("[yellow]This agent has executions.[/]");
+            Console.ReadKey();
+            return;
+        }
 
         if (AnsiConsole.Confirm($"Delete agent [red]{agent.Name}[/]?"))
         {
