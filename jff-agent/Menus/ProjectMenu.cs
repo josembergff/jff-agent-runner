@@ -65,7 +65,7 @@ public class ProjectMenu
 
     private async Task ListAsync()
     {
-        var projects = await projectService.Get<Project>();
+        var projects = await projectService.Get<Project>(new Project());
 
         var projectList = projects.Value ?? new List<Project>();
 
@@ -105,7 +105,7 @@ public class ProjectMenu
 
     private async Task DeleteAsync()
     {
-        var projects = await projectService.Get<Project>();
+        var projects = await projectService.Get<Project>(new Project());
 
         if (projects.Value.Count() == 0)
         {
