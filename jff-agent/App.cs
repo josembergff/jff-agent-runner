@@ -6,16 +6,16 @@ using Spectre.Console;
 public class App
 {
     private readonly ProjectMenu projectMenu;
-    private readonly IAgentService agentService;
+    private readonly AgentMenu agentMenu;
     private readonly IExecutionService executionService;
 
     public App(
         ProjectMenu projectMenu,
-        IAgentService agentService,
+        AgentMenu agentMenu,
         IExecutionService executionService)
     {
         this.projectMenu = projectMenu;
-        this.agentService = agentService;
+        this.agentMenu = agentMenu;
         this.executionService = executionService;
     }
 
@@ -52,7 +52,7 @@ public class App
                     break;
 
                 case "Agentes":
-                    result = await agentService.ShowMenuAsync();
+                    result = await agentMenu.ShowMenuAsync();
                     break;
 
                 case "Executar Issue":
