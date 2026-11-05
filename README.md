@@ -188,7 +188,7 @@ dotnet tool restore                # installs dotnet-ef
 ./utils/new-migration.sh <Name>    # adds a migration and applies it to your local database
 ```
 
-See [AGENT.md](AGENT.md) for architecture details and contribution rules.
+See [AGENTS.md](AGENTS.md) for architecture details and contribution rules.
 
 ## License
 

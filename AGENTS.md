@@ -1,4 +1,4 @@
-# AGENT.md
+# AGENTS.md
 
 Guidance for AI coding agents working on this repository. For what the product does and how to use it, see [README.md](README.md).
 
