@@ -330,7 +330,7 @@ public class ExecutionMenu(
 
         if (!hasSession.Value)
         {
-            execution.Status = ExecutionStatusEnum.Failed;
+            execution.Status = ExecutionStatusEnum.Completed;
             execution.FinishedAt = DateTime.UtcNow;
             execution.UpdatedAt = DateTime.UtcNow;
             execution.SessionDetails = "Session was closed.";
