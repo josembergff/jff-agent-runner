@@ -37,7 +37,7 @@ builder.Logging.AddConsole();
 Log.Logger = new LoggerConfiguration()
                         .Enrich.FromLogContext()
                         .Enrich.WithProperty("env", builder.Environment.EnvironmentName)
-                        .WriteTo.File(new CompactJsonFormatter(), "logs", rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Error)
+                        .WriteTo.File(new CompactJsonFormatter(), "logs/log-json-", rollingInterval: RollingInterval.Day, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Error)
                         .WriteTo.Console(new JsonFormatter(), restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning)
                         .WriteTo.SQLite(
                             sqliteDbPath: databasePath,
