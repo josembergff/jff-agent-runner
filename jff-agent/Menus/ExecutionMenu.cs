@@ -1,14 +1,16 @@
 
 using System.Linq.Expressions;
+using Domain.DTOs.Integrations;
 using Domain.Entities;
 using Domain.Enums;
+using Domain.Interfaces.Infrastructure;
 using JffCsharpTools.Application.Common;
 using JffCsharpTools.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
 public class ExecutionMenu(
-    IDefaultService defaultService, ILogger<ExecutionMenu> logger)
+    IDefaultService defaultService, ILogger<ExecutionMenu> logger, IGitHubCli gitHubCli)
 {
     public async Task<Result> ShowMenuAsync()
     {
@@ -77,14 +79,122 @@ public class ExecutionMenu(
         }
     }
 
+
     private async Task CreateAsync()
     {
-        // Select a project and agent.
-        // Enter the issue number.
-        // Retrieve the issue using GitHubCli.
-        // Display the details and request confirmation.
-        // Start the execution using ExecutionService.
+        // 1. Selecionar projeto
+        var projects = await defaultService.Get<Project>(new Project());
+
+        if (projects.Value.Count() == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]Nenhum projeto cadastrado.[/]");
+            Console.ReadKey(true);
+            return;
+        }
+
+        var project = AnsiConsole.Prompt(
+            new SelectionPrompt<Project>()
+                .Title("Selecione o projeto:")
+                .UseConverter(p => p.Name)
+                .AddChoices(projects.Value));
+
+        // 2. Selecionar agente
+        var agents = await defaultService.Get<Domain.Entities.Agent>(new Domain.Entities.Agent());
+
+        if (agents.Value.Count() == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]Nenhum agente cadastrado.[/]");
+            Console.ReadKey(true);
+            return;
+        }
+
+        var agent = AnsiConsole.Prompt(
+            new SelectionPrompt<Domain.Entities.Agent>()
+                .Title("Selecione o agente:")
+                .UseConverter(a => a.Name)
+                .AddChoices(agents.Value));
+
+        // 3. Informar Issue
+        var issueNumber = AnsiConsole.Ask<int>(
+            "Número da Issue GitHub:");
+
+        // 4. Consultar Issue
+        GitHubIssueDto? issue;
+
+        try
+        {
+            var issueResult = await gitHubCli.GetIssueAsync(
+                project.RepositoryUrl,
+                issueNumber);
+            issue = issueResult.Value;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[red]Erro ao consultar Issue: {Markup.Escape(ex.Message)}[/]");
+
+            Console.ReadKey(true);
+            return;
+        }
+
+        if (issue is null)
+        {
+            AnsiConsole.MarkupLine("[red]Issue não encontrada.[/]");
+            Console.ReadKey(true);
+            return;
+        }
+
+        // 5. Exibir detalhes
+        var panel = new Panel(
+            new Markup(
+                $"[bold]{Markup.Escape(issue.Title)}[/]\n\n" +
+                $"{Markup.Escape(issue.Body ?? "Sem descrição")}\n\n" +
+                $"[grey]Status: {Markup.Escape(issue.State)}[/]\n" +
+                $"URL: {Markup.Escape(issue.Url)}[/]"))
+        {
+            Header = new PanelHeader($"Issue #{issue.Number}"),
+            Border = BoxBorder.Rounded
+        };
+
+        AnsiConsole.Write(panel);
+
+        AnsiConsole.MarkupLine(
+            $"\nProjeto: [green]{Markup.Escape(project.Name)}[/]");
+
+        AnsiConsole.MarkupLine(
+            $"Agente: [green]{Markup.Escape(agent.Name)}[/]");
+
+        // 6. Confirmar execução
+        if (!AnsiConsole.Confirm("Deseja iniciar a execução?"))
+            return;
+
+        // 7. Criar execução
+        try
+        {
+            await AnsiConsole.Status()
+                .StartAsync("Iniciando agente...", async ctx =>
+                {
+                    await defaultService.Create(0, new Execution
+                    {
+                        ProjectId = project.Id,
+                        AgentId = agent.Id,
+                        IssueNumber = issue.Number,
+                        Status = ExecutionStatusEnum.Running
+                    }, false);
+                    await defaultService.SaveChanges();
+                });
+            AnsiConsole.MarkupLine(
+                "[green]Execução iniciada com sucesso![/]");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine(
+                $"[red]Erro ao iniciar execução: {Markup.Escape(ex.Message)}[/]");
+        }
+
+        Console.ReadKey(true);
     }
+
 
     private async Task ListAsync(
         Expression<Func<Execution, bool>>? filter = null)
