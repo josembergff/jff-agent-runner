@@ -1,8 +1,7 @@
-using JffCsharpTools.Application.Common;
+using JffCsharpTools.Application.Interfaces;
 
 namespace domain.interfaces.services;
 
-public interface IProjectService
+public interface IProjectService : IDefaultService
 {
-    Task<Result> ShowMenuAsync();
 }

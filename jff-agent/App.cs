@@ -4,16 +4,16 @@ using Spectre.Console;
 
 public class App
 {
-    private readonly IProjectService projectService;
+    private readonly ProjectMenu projectMenu;
     private readonly IAgentService agentService;
     private readonly IExecutionService executionService;
 
     public App(
-        IProjectService projectService,
+        ProjectMenu projectMenu,
         IAgentService agentService,
         IExecutionService executionService)
     {
-        this.projectService = projectService;
+        this.projectMenu = projectMenu;
         this.agentService = agentService;
         this.executionService = executionService;
     }
@@ -47,7 +47,7 @@ public class App
             switch (option)
             {
                 case "Projetos":
-                    result = await projectService.ShowMenuAsync();
+                    result = await projectMenu.ShowMenuAsync();
                     break;
 
                 case "Agentes":

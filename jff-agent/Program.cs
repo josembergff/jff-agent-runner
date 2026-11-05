@@ -4,6 +4,8 @@ using Domain.Interfaces.Infrastructure;
 using Domain.Services;
 using Infra.Context;
 using Infra.Tmux;
+using JffCsharpTools.Application.Interfaces;
+using JffCsharpTools.Application.Services;
 using JffCsharpTools.Domain.Interfaces.Repositories;
 using JffCsharpTools10.Infra.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -28,12 +30,14 @@ builder.Services.AddSingleton<ITmuxExecutor, TmuxExecutor>();
 builder.Services.AddSingleton<IDefaultRepository, DefaultRepository<JffAgentDbContext>>();
 
 // Domain / Services
+builder.Services.AddTransient<IDefaultService, DefaultService>();
 builder.Services.AddTransient<IProjectService, ProjectService>();
 builder.Services.AddTransient<IAgentService, AgentService>();
 builder.Services.AddTransient<IExecutionService, ExecutionService>();
 
 // Application
 builder.Services.AddTransient<App>();
+builder.Services.AddTransient<ProjectMenu>();
 
 using var host = builder.Build();
 

@@ -1,12 +1,13 @@
 using domain.interfaces.services;
-using JffCsharpTools.Application.Common;
+using JffCsharpTools.Application.Services;
+using JffCsharpTools.Domain.Interfaces.Repositories;
 
 namespace Domain.Services;
 
-public class ProjectService : IProjectService
+public class ProjectService : DefaultService<IDefaultRepository>, IProjectService
 {
-    public Task<Result> ShowMenuAsync()
+    public ProjectService(IDefaultRepository repository) : base(repository)
     {
-        throw new NotImplementedException();
+
     }
 }
