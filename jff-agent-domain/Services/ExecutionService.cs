@@ -66,6 +66,7 @@ public class ExecutionService : DefaultService, IExecutionService
             // 7. Update execution status
             execution.Status = ExecutionStatusEnum.Running;
             execution.StartedAt = DateTime.UtcNow;
+            execution.UpdatedAt = DateTime.UtcNow;
 
             await defaultRepository.UpdateByKey(execution, execution.Id, true);
             return Result.Ok();
@@ -74,6 +75,8 @@ public class ExecutionService : DefaultService, IExecutionService
         {
             execution.Status = ExecutionStatusEnum.Failed;
             execution.FinishedAt = DateTime.UtcNow;
+            execution.UpdatedAt = DateTime.UtcNow;
+            execution.SessionDetails = ex.Message;
 
             await defaultRepository.UpdateByKey(execution, execution.Id, true);
 

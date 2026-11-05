@@ -77,6 +77,10 @@ namespace jff_agent_infra.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SessionDetails")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SessionName")
                         .IsRequired()
                         .HasColumnType("TEXT");

@@ -24,4 +24,5 @@ public class Execution : DefaultEntity
 
     public string SesionAgentCommand { get; set; }
     public string SessionProjectPath { get; set; }
+    public string SessionDetails { get; set; }
 }
