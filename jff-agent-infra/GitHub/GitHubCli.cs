@@ -51,7 +51,7 @@ public class GitHubCli : IGitHubCli
             startInfo.ArgumentList.Add(argument);
 
         using var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException("Falha ao iniciar gh.");
+            ?? throw new InvalidOperationException("Fails to start GitHub CLI.");
 
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
@@ -63,7 +63,7 @@ public class GitHubCli : IGitHubCli
 
         if (process.ExitCode != 0)
             throw new InvalidOperationException(
-                $"Erro ao executar GitHub CLI: {error}");
+                $"Error to run GitHub CLI: {error}");
 
         return output;
     }

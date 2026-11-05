@@ -4,12 +4,12 @@ namespace Domain.Enums;
 
 public enum ExecutionStatusEnum
 {
-    [Description("Pendente")]
+    [Description("Pending")]
     Pending,
-    [Description("Em execução")]
+    [Description("Running")]
     Running,
-    [Description("Concluído")]
+    [Description("Completed")]
     Completed,
-    [Description("Cancelado")]
+    [Description("Failed")]
     Failed
 }

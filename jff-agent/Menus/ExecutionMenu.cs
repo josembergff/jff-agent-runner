@@ -18,38 +18,38 @@ public class ExecutionMenu(
 
             var option = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("[green]Execuções[/]")
+                    .Title("[green]Executions[/]")
                     .AddChoices(
-                        "Listar execuções",
-                        "Listar execuções por agente",
-                        "Listar execuções por projeto",
-                        "Listar execuções em andamento",
-                        "Histórico",
-                        "Voltar"));
+                        "List executions",
+                        "List executions by agent",
+                        "List executions by project",
+                        "List running executions",
+                        "History",
+                        "Back"));
 
             switch (option)
             {
-                case "Listar execuções":
+                case "List executions":
                     await ListAsync();
                     break;
 
-                case "Listar execuções por agente":
+                case "List executions by agent":
                     await ListByAgentAsync();
                     break;
 
-                case "Listar execuções por projeto":
+                case "List executions by project":
                     await ListByProjectAsync();
                     break;
 
-                case "Listar execuções em andamento":
+                case "List running executions":
                     await ListRunningAsync();
                     break;
 
-                case "Histórico":
+                case "History":
                     await ListAsync();
                     break;
 
-                case "Voltar":
+                case "Back":
                     running = false;
                     break;
             }
@@ -63,8 +63,8 @@ public class ExecutionMenu(
 
         var table = new Table()
             .AddColumn("ID")
-            .AddColumn("Projeto")
-            .AddColumn("Agente")
+            .AddColumn("Project")
+            .AddColumn("Agent")
             .AddColumn("Issue")
             .AddColumn("Status");
 
@@ -80,7 +80,7 @@ public class ExecutionMenu(
 
         AnsiConsole.Write(table);
 
-        AnsiConsole.MarkupLine("\n[grey]Pressione qualquer tecla para continuar.[/]");
+        AnsiConsole.MarkupLine("\n[grey]Press any key to continue.[/]");
         Console.ReadKey(true);
     }
 
@@ -90,14 +90,14 @@ public class ExecutionMenu(
 
         if (agents.Value.Count() == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]Nenhum agente cadastrado.[/]");
+            AnsiConsole.MarkupLine("[yellow]No agents found.[/]");
             Console.ReadKey(true);
             return;
         }
 
         var agent = AnsiConsole.Prompt(
             new SelectionPrompt<Domain.Entities.Agent>()
-                .Title("Selecione o agente:")
+                .Title("Select an agent:")
                 .UseConverter(a => a.Name)
                 .AddChoices(agents.Value));
 
@@ -110,14 +110,14 @@ public class ExecutionMenu(
 
         if (projects.Value.Count() == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]Nenhum projeto cadastrado.[/]");
+            AnsiConsole.MarkupLine("[yellow]No projects found.[/]");
             Console.ReadKey(true);
             return;
         }
 
         var project = AnsiConsole.Prompt(
             new SelectionPrompt<Project>()
-                .Title("Selecione o projeto:")
+                .Title("Select a project:")
                 .UseConverter(p => p.Name)
                 .AddChoices(projects.Value));
 

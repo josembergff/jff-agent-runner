@@ -85,7 +85,7 @@ public class TmuxExecutor : ITmuxExecutor
             startInfo.ArgumentList.Add(argument);
 
         using var process = Process.Start(startInfo)
-            ?? throw new InvalidOperationException("Falha ao iniciar tmux.");
+            ?? throw new InvalidOperationException("Fails to start tmux.");
 
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
@@ -97,7 +97,7 @@ public class TmuxExecutor : ITmuxExecutor
 
         if (process.ExitCode != 0)
             throw new InvalidOperationException(
-                $"Erro ao executar tmux: {error}");
+                $"Error to run tmux: {error}");
 
         return output;
     }

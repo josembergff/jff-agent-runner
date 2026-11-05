@@ -34,32 +34,30 @@ public class App
 
             var option = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                    .Title("Selecione uma opção:")
+                    .Title("Select one option:")
                     .AddChoices(
-                        "Projetos",
-                        "Agentes",
-                        "Executar Issue",
-                        "Execuções em andamento",
-                        "Histórico",
-                        "Sair"));
+                        "Projects",
+                        "Agents",
+                        "Executions",
+                        "Exit"));
 
             var result = new Result();
 
             switch (option)
             {
-                case "Projetos":
+                case "Projects":
                     result = await projectMenu.ShowMenuAsync();
                     break;
 
-                case "Agentes":
+                case "Agents":
                     result = await agentMenu.ShowMenuAsync();
                     break;
 
-                case "Execuções":
+                case "Executions":
                     result = await executionService.StartMenuAsync();
                     break;
 
-                case "Sair":
+                case "Exit":
                     running = false;
                     break;
             }
@@ -69,7 +67,7 @@ public class App
                 Console.WriteLine(result.Message);
                 if (result.Messages.Any())
                 {
-                    Console.WriteLine("Detalhes do erro:");
+                    Console.WriteLine("Error detail:");
                     foreach (var message in result.Messages)
                     {
                         Console.WriteLine(message);

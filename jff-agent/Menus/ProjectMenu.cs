@@ -27,28 +27,28 @@ public class ProjectMenu
 
                 var option = AnsiConsole.Prompt(
                     new SelectionPrompt<string>()
-                        .Title("[green]Gerenciar projetos[/]")
+                        .Title("[green]Manage projects[/]")
                         .AddChoices(
-                            "Listar projetos",
-                            "Cadastrar projeto",
-                            "Excluir projeto",
-                            "Voltar"));
+                            "List projects",
+                            "Add project",
+                            "Delete project",
+                            "Back"));
 
                 switch (option)
                 {
-                    case "Listar projetos":
+                    case "List projects":
                         await ListAsync();
                         break;
 
-                    case "Cadastrar projeto":
+                    case "Add project":
                         await AddAsync();
                         break;
 
-                    case "Excluir projeto":
+                    case "Delete project":
                         await DeleteAsync();
                         break;
 
-                    case "Voltar":
+                    case "Back":
                         running = false;
                         break;
                 }
@@ -70,9 +70,9 @@ public class ProjectMenu
         var projectList = projects.Value ?? new List<Project>();
 
         var table = new Table()
-            .AddColumn("Nome")
-            .AddColumn("Repositório")
-            .AddColumn("Diretório");
+            .AddColumn("Name")
+            .AddColumn("Repository")
+            .AddColumn("Local path");
 
         foreach (var project in projectList)
         {
@@ -84,7 +84,7 @@ public class ProjectMenu
 
         AnsiConsole.Write(table);
         AnsiConsole.Prompt(
-            new TextPrompt<string>("Pressione Enter para continuar:")
+            new TextPrompt<string>("Press Enter to continue:")
                 .AllowEmpty());
     }
 
@@ -92,15 +92,15 @@ public class ProjectMenu
     {
         var project = new Project
         {
-            Name = AnsiConsole.Ask<string>("Nome:"),
-            RepositoryUrl = AnsiConsole.Ask<string>("URL do GitHub:"),
-            LocalPath = AnsiConsole.Ask<string>("Diretório local:")
+            Name = AnsiConsole.Ask<string>("Name:"),
+            RepositoryUrl = AnsiConsole.Ask<string>("GitHub URL:"),
+            LocalPath = AnsiConsole.Ask<string>("Local path:")
         };
 
         await defaultService.Create<Project>(0, project, false);
         await defaultService.SaveChanges();
 
-        AnsiConsole.MarkupLine("[green]Projeto cadastrado![/]");
+        AnsiConsole.MarkupLine("[green]Project added![/]");
         Console.ReadKey();
     }
 
@@ -110,19 +110,19 @@ public class ProjectMenu
 
         if (projects.Value.Count() == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]Nenhum projeto cadastrado.[/]");
+            AnsiConsole.MarkupLine("[yellow]No projects found.[/]");
             Console.ReadKey();
             return;
         }
 
         var project = AnsiConsole.Prompt(
             new SelectionPrompt<Project>()
-                .Title("Selecione o projeto:")
+                .Title("Select a project:")
                 .UseConverter(p => p.Name)
                 .AddChoices(projects.Value));
 
         var confirm = AnsiConsole.Confirm(
-            $"Excluir o projeto [red]{project.Name}[/]?");
+            $"Delete project [red]{project.Name}[/]?");
 
         if (confirm)
         {

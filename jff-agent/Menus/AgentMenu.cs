@@ -25,28 +25,28 @@ public class AgentMenu
 
                 var option = AnsiConsole.Prompt(
                     new SelectionPrompt<string>()
-                        .Title("[green]Gerenciar agentes[/]")
+                        .Title("[green]Manage agents[/]")
                         .AddChoices(
-                            "Listar agentes",
-                            "Cadastrar agente",
-                            "Excluir agente",
-                            "Voltar"));
+                            "List agents",
+                            "Add agent",
+                            "Delete agent",
+                            "Back"));
 
                 switch (option)
                 {
-                    case "Listar agentes":
+                    case "List agents":
                         await ListAsync();
                         break;
 
-                    case "Cadastrar agente":
+                    case "Add agent":
                         await CreateAsync();
                         break;
 
-                    case "Excluir agente":
+                    case "Delete agent":
                         await RemoveAsync();
                         break;
 
-                    case "Voltar":
+                    case "Back":
                         running = false;
                         break;
                 }
@@ -67,9 +67,9 @@ public class AgentMenu
 
         var table = new Table()
             .AddColumn("ID")
-            .AddColumn("Nome")
-            .AddColumn("Comando")
-            .AddColumn("Argumentos");
+            .AddColumn("Name")
+            .AddColumn("Command")
+            .AddColumn("Arguments");
 
         foreach (var agent in agents.Value)
         {
@@ -81,7 +81,7 @@ public class AgentMenu
         }
 
         AnsiConsole.Write(table);
-        AnsiConsole.MarkupLine("\n[grey]Pressione qualquer tecla para continuar.[/]");
+        AnsiConsole.MarkupLine("\n[grey]Press any key to continue.[/]");
         Console.ReadKey(true);
     }
 
@@ -89,16 +89,16 @@ public class AgentMenu
     {
         var agent = new Domain.Entities.Agent
         {
-            Name = AnsiConsole.Ask<string>("Nome:"),
-            Command = AnsiConsole.Ask<string>("Comando:"),
+            Name = AnsiConsole.Ask<string>("Name:"),
+            Command = AnsiConsole.Ask<string>("Command:"),
             Arguments = AnsiConsole.Ask<string>(
-                "Argumentos (opcional):", "")
+                "Arguments (optional):", "")
         };
 
         await defaultService.Create<Domain.Entities.Agent>(0, agent, false);
         await defaultService.SaveChanges();
 
-        AnsiConsole.MarkupLine("[green]Agente cadastrado com sucesso![/]");
+        AnsiConsole.MarkupLine("[green]Agent added successfully![/]");
         Console.ReadKey(true);
     }
 
@@ -108,22 +108,22 @@ public class AgentMenu
 
         if (agents.Value.Count() == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]Nenhum agente cadastrado.[/]");
+            AnsiConsole.MarkupLine("[yellow]No agents found.[/]");
             Console.ReadKey(true);
             return;
         }
 
         var agent = AnsiConsole.Prompt(
             new SelectionPrompt<Domain.Entities.Agent>()
-                .Title("Selecione o agente:")
+                .Title("Select an agent:")
                 .UseConverter(a => a.Name)
                 .AddChoices(agents.Value));
 
-        if (AnsiConsole.Confirm($"Excluir o agente [red]{agent.Name}[/]?"))
+        if (AnsiConsole.Confirm($"Delete agent [red]{agent.Name}[/]?"))
         {
             await defaultService.DeleteByKey<Domain.Entities.Agent, int>(0, agent.Id, false);
             await defaultService.SaveChanges();
-            AnsiConsole.MarkupLine("[green]Agente excluído![/]");
+            AnsiConsole.MarkupLine("[green]Agent deleted![/]");
         }
 
         Console.ReadKey(true);
