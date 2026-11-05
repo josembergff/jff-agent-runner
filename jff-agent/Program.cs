@@ -55,8 +55,6 @@ builder.Services.AddSingleton<IDefaultRepository, DefaultRepository<JffAgentDbCo
 
 // Domain / Services
 builder.Services.AddTransient<IDefaultService, DefaultService>();
-builder.Services.AddTransient<IProjectService, ProjectService>();
-builder.Services.AddTransient<IAgentService, AgentService>();
 builder.Services.AddTransient<IExecutionService, ExecutionService>();
 
 // Application

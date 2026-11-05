@@ -152,7 +152,7 @@ public class ExecutionMenu(
                 $"[bold]{Markup.Escape(issue.Title)}[/]\n\n" +
                 $"{Markup.Escape(issue.Body ?? "No description available.")}\n\n" +
                 $"[grey]Status: {Markup.Escape(issue.State)}[/]\n" +
-                $"URL: {Markup.Escape(issue.Url)}[/]"))
+                $"URL: {Markup.Escape(issue.Url)}"))
         {
             Header = new PanelHeader($"Issue #{issue.Number}"),
             Border = BoxBorder.Rounded

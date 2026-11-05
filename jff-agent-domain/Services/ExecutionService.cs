@@ -38,9 +38,6 @@ public class ExecutionService : DefaultService, IExecutionService
             throw new DomainException("Project directory does not exist.");
 
         // 4. Generate session name
-        var sessionName = $"jff-{execution.Id:N}";
-
-        execution.SessionName = sessionName;
         execution.SesionAgentCommand = agent.Command;
         execution.SessionProjectPath = project.LocalPath;
         execution.Status = ExecutionStatusEnum.Pending;
@@ -48,6 +45,9 @@ public class ExecutionService : DefaultService, IExecutionService
 
         // 5. Save execution before starting the agent
         await defaultRepository.Create(execution, true);
+        var sessionName = $"jff-{execution.Id:N}";
+        execution.SessionName = sessionName;
+        await defaultRepository.UpdateByKey(execution, execution.Id, true);
 
         try
         {
