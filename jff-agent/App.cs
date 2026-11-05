@@ -1,5 +1,4 @@
 using Agent.Menus;
-using domain.interfaces.services;
 using JffCsharpTools.Application.Common;
 using Spectre.Console;
 
@@ -28,7 +27,7 @@ public class App
             Console.Clear();
 
             AnsiConsole.Write(
-                new FigletText("JFF Agent Runner")
+                new FigletText("JFF Agent")
                     .Centered()
                     .Color(Color.Green));
 

@@ -4,16 +4,8 @@ using Spectre.Console;
 using Microsoft.Extensions.Logging;
 using JffCsharpTools.Application.Common;
 
-public class AgentMenu
+public class AgentMenu(IDefaultService defaultService, ILogger<AgentMenu> logger)
 {
-    private readonly IDefaultService defaultService;
-    private readonly ILogger<AgentMenu> logger;
-
-    public AgentMenu(IDefaultService defaultService, ILogger<AgentMenu> logger)
-    {
-        this.defaultService = defaultService;
-        this.logger = logger;
-    }
     public async Task<Result> ShowMenuAsync()
     {
         var running = true;

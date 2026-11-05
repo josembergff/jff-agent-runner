@@ -6,16 +6,8 @@ using Spectre.Console;
 
 namespace Agent.Menus;
 
-public class ProjectMenu
+public class ProjectMenu(IDefaultService defaultService, ILogger<ProjectMenu> logger)
 {
-    private readonly IDefaultService defaultService;
-    private readonly ILogger<ProjectMenu> logger;
-
-    public ProjectMenu(IDefaultService defaultService, ILogger<ProjectMenu> logger)
-    {
-        this.defaultService = defaultService;
-        this.logger = logger;
-    }
     public async Task<Result> ShowMenuAsync()
     {
         var running = true;
