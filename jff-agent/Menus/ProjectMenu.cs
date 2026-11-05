@@ -103,7 +103,7 @@ public class ProjectMenu(IDefaultService defaultService, ILogger<ProjectMenu> lo
         var dataDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
         "jff-agent-runner",
-        "GitRepositories");
+        "git-repositories");
         var directoryPath = Path.Combine(dataDirectory, path);
         if (!Directory.Exists(directoryPath))
         {
