@@ -7,7 +7,8 @@ public interface ITmuxExecutor
     Task<Result> StartSessionAsync(
         string sessionName,
         string workingDirectory,
-        string command);
+        string command,
+        string arguments);
 
     Task<Result<bool>> HasSessionAsync(string sessionName);
 

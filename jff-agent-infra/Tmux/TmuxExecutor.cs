@@ -12,9 +12,13 @@ public class TmuxExecutor : ITmuxExecutor
     public async Task<Result> StartSessionAsync(
         string sessionName,
         string workingDirectory,
-        string command)
+        string command,
+        string arguments)
     {
         var sessionCreated = false;
+        var fullCommand = string.IsNullOrWhiteSpace(arguments)
+            ? command
+            : $"{command} {arguments}";
 
         try
         {
@@ -25,7 +29,7 @@ public class TmuxExecutor : ITmuxExecutor
             sessionCreated = true;
 
             await ExecuteAsync("set-option", "-w", "-t", sessionName, "remain-on-exit", "on");
-            await ExecuteAsync("respawn-pane", "-k", "-t", sessionName, "-c", workingDirectory, command);
+            await ExecuteAsync("respawn-pane", "-k", "-t", sessionName, "-c", workingDirectory, fullCommand);
 
             var deadline = DateTime.UtcNow + StartupGracePeriod;
 

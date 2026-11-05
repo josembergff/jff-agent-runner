@@ -62,7 +62,8 @@ public class ExecutionService : DefaultService, IExecutionService
             var resultTmux = await tmuxExecutor.StartSessionAsync(
                 sessionName,
                 project.LocalPath,
-                agent.Command);
+                agent.Command,
+                agent.Arguments);
 
             if (!resultTmux.Success)
             {
