@@ -1,5 +1,6 @@
 
 using System.Linq.Expressions;
+using domain.interfaces.services;
 using Domain.DTOs.Integrations;
 using Domain.Entities;
 using Domain.Enums;
@@ -10,8 +11,9 @@ using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
 public class ExecutionMenu(
-    IDefaultService defaultService, ILogger<ExecutionMenu> logger, IGitHubCli gitHubCli)
+    IDefaultService defaultService, ILogger<ExecutionMenu> logger, IExecutionService executionService, IGitHubCli gitHubCli)
 {
+
     public async Task<Result> ShowMenuAsync()
     {
         var running = true;
@@ -174,14 +176,13 @@ public class ExecutionMenu(
             await AnsiConsole.Status()
                 .StartAsync("Starting agent...", async ctx =>
                 {
-                    await defaultService.Create(0, new Execution
+                    await executionService.CreateAsync(new Execution
                     {
                         ProjectId = project.Id,
                         AgentId = agent.Id,
                         IssueNumber = issue.Number,
                         Status = ExecutionStatusEnum.Running
-                    }, false);
-                    await defaultService.SaveChanges();
+                    });
                 });
             AnsiConsole.MarkupLine(
                 "[green]Execution started successfully![/]");

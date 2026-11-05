@@ -1,10 +1,10 @@
+using Domain.Entities;
 using JffCsharpTools.Application.Common;
+using JffCsharpTools.Application.Interfaces;
 
 namespace domain.interfaces.services;
 
-public interface IExecutionService
+public interface IExecutionService : IDefaultService
 {
-    Task<Result> StartMenuAsync();
-    Task<Result> ShowRunningAsync();
-    Task<Result> ShowHistoryAsync();
+    Task<Result> CreateAsync(Execution execution);
 }

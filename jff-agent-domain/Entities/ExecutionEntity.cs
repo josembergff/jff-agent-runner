@@ -13,9 +13,15 @@ public class Execution : DefaultEntity
     public int AgentId { get; set; }
     public int IssueNumber { get; set; }
     public ExecutionStatusEnum Status { get; set; }
+    public string SessionName { get; set; }
+    public DateTime? StartedAt { get; set; }
+    public DateTime? FinishedAt { get; set; }
     public virtual Project Project { get; set; }
     public virtual Agent Agent { get; set; }
 
     [NotMapped]
     public string StatusName { get { return Status.GetDescription(); } }
+
+    public string SesionAgentCommand { get; set; }
+    public string SessionProjectPath { get; set; }
 }

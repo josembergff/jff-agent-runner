@@ -89,11 +89,27 @@ public class ProjectMenu(IDefaultService defaultService, ILogger<ProjectMenu> lo
             LocalPath = AnsiConsole.Ask<string>("Local path:")
         };
 
+        project.LocalPath = verifyAndCreateDirectory(project.LocalPath);
+
         await defaultService.Create<Project>(0, project, false);
         await defaultService.SaveChanges();
 
         AnsiConsole.MarkupLine("[green]Project added![/]");
         Console.ReadKey();
+    }
+
+    private string verifyAndCreateDirectory(string path)
+    {
+        var dataDirectory = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        "jff-agent-runner",
+        "GitRepositories");
+        var directoryPath = Path.Combine(dataDirectory, path);
+        if (!Directory.Exists(directoryPath))
+        {
+            Directory.CreateDirectory(directoryPath);
+        }
+        return directoryPath;
     }
 
     private async Task DeleteAsync()
