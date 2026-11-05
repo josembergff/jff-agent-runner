@@ -8,7 +8,7 @@ on:
 
 jobs:
     test-build:
-        name: Teste e build (.NET 8 em container)
+        name: Teste e build (.NET 10)
         runs-on: ubuntu-latest
         permissions:
             contents: read
