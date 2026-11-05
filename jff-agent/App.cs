@@ -55,16 +55,8 @@ public class App
                     result = await agentMenu.ShowMenuAsync();
                     break;
 
-                case "Executar Issue":
+                case "Execuções":
                     result = await executionService.StartMenuAsync();
-                    break;
-
-                case "Execuções em andamento":
-                    result = await executionService.ShowRunningAsync();
-                    break;
-
-                case "Histórico":
-                    result = await executionService.ShowHistoryAsync();
                     break;
 
                 case "Sair":

@@ -62,6 +62,7 @@ builder.Services.AddTransient<IExecutionService, ExecutionService>();
 // Application
 builder.Services.AddTransient<ProjectMenu>();
 builder.Services.AddTransient<AgentMenu>();
+builder.Services.AddTransient<ExecutionMenu>();
 builder.Services.AddTransient<App>();
 
 using var host = builder.Build();
