@@ -79,11 +79,11 @@ public class ExecutionMenu(
 
     private async Task CreateAsync()
     {
-        // Selecionar projeto e agente.
-        // Informar número da Issue.
-        // Consultar Issue pelo GitHubCli.
-        // Exibir detalhes e solicitar confirmação.
-        // Iniciar execução pelo ExecutionService.
+        // Select a project and agent.
+        // Enter the issue number.
+        // Retrieve the issue using GitHubCli.
+        // Display the details and request confirmation.
+        // Start the execution using ExecutionService.
     }
 
     private async Task ListAsync(
@@ -170,23 +170,23 @@ public class ExecutionMenu(
 
         if (executions.Value.Count() == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]Nenhuma execução em andamento.[/]");
+            AnsiConsole.MarkupLine("[yellow]No executions are currently running.[/]");
             Console.ReadKey(true);
             return;
         }
 
         var execution = AnsiConsole.Prompt(
             new SelectionPrompt<Execution>()
-                .Title("Selecione a execução:")
+                .Title("Select an execution:")
                 .UseConverter(e => $"Issue #{e.IssueNumber} - {e.Id}")
                 .AddChoices(executions.Value));
 
-        if (AnsiConsole.Confirm("Deseja cancelar esta execução?"))
+        if (AnsiConsole.Confirm("Do you want to cancel this execution?"))
         {
             execution.Status = ExecutionStatusEnum.Cancelled;
             await defaultService.UpdateByKey<Execution, int>(0, execution, execution.Id, false);
             await defaultService.SaveChanges();
-            AnsiConsole.MarkupLine("[green]Execução cancelada.[/]");
+            AnsiConsole.MarkupLine("[green]Execution canceled.[/]");
         }
 
         Console.ReadKey(true);
@@ -198,31 +198,31 @@ public class ExecutionMenu(
 
         if (executions.Value.Count() == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]Nenhuma execução cadastrada.[/]");
+            AnsiConsole.MarkupLine("[yellow]No executions found.[/]");
             Console.ReadKey(true);
             return;
         }
 
         var execution = AnsiConsole.Prompt(
             new SelectionPrompt<Execution>()
-                .Title("Selecione a execução:")
+                .Title("Select an execution:")
                 .UseConverter(e => $"Issue #{e.IssueNumber} - {e.Status}")
                 .AddChoices(executions.Value));
 
         if (execution.Status == ExecutionStatusEnum.Running)
         {
             AnsiConsole.MarkupLine(
-                "[red]Não é possível excluir uma execução em andamento. Cancele primeiro.[/]");
+                "[red]A running execution cannot be deleted. Cancel it first.[/]");
 
             Console.ReadKey(true);
             return;
         }
 
-        if (AnsiConsole.Confirm("Deseja excluir permanentemente esta execução?"))
+        if (AnsiConsole.Confirm("Do you want to permanently delete this execution?"))
         {
             await defaultService.DeleteByKey<Execution, int>(0, execution.Id, false);
             await defaultService.SaveChanges();
-            AnsiConsole.MarkupLine("[green]Execução excluída.[/]");
+            AnsiConsole.MarkupLine("[green]Execution deleted.[/]");
         }
 
         Console.ReadKey(true);
