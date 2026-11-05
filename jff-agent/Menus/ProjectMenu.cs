@@ -1,6 +1,7 @@
 using domain.interfaces.services;
 using Domain.Entities;
 using JffCsharpTools.Application.Common;
+using JffCsharpTools.Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
@@ -8,10 +9,10 @@ namespace Agent.Menus;
 
 public class ProjectMenu
 {
-    private readonly IProjectService projectService;
+    private readonly IDefaultService projectService;
     private readonly ILogger<ProjectMenu> logger;
 
-    public ProjectMenu(IProjectService projectService, ILogger<ProjectMenu> logger)
+    public ProjectMenu(IDefaultService projectService, ILogger<ProjectMenu> logger)
     {
         this.projectService = projectService;
         this.logger = logger;
