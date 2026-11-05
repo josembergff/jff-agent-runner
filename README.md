@@ -79,13 +79,9 @@ Go to **Projects → Add project** and fill in:
 
 A relative path is placed under `~/jff-agent-runner/git-repositories/`.
 
-**jff-agent creates the directory but does not clone the repository.** Clone it yourself before starting an execution:
+jff-agent creates the directory and clones the repository into it with `gh repo clone`. The project is saved only if the clone succeeds. If it fails, the error is logged and shown, and nothing is saved.
 
-```bash
-git clone https://github.com/owner/repo.git ~/jff-agent-runner/git-repositories/my-repo
-```
-
-If you added the project first, the directory will already exist. The clone still works as long as the directory is empty.
+The directory must be new or empty, so a folder that already holds a clone cannot be registered.
 
 ### 2. Add an agent
 
@@ -167,6 +163,7 @@ The prompt tells agents to stop and ask when an issue is ambiguous, so an execut
 | Symptom | What to check |
 | --- | --- |
 | An error, or no issues, when selecting an issue | Is the issue open and **Ready** on a Project board? Does `gh auth status` list the `read:project` scope? |
+| "Error cloning repository" when adding a project | Is the URL right? Does `gh auth status` show you logged in with access to the repository? Is the local directory new or empty? |
 | "Project directory does not exist" | The local directory was removed. Recreate and clone it. |
 | The agent starts, but `gh` or `git` commands fail | The directory is empty or is not a clone of the repository. |
 | "Agent command exited with status..." | The command or arguments are wrong, or the agent is not logged in. Run the same command by hand in the project directory. |

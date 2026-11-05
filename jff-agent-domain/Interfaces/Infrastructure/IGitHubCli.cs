@@ -11,4 +11,8 @@ public interface IGitHubCli
 
     Task<Result<List<GitHubIssueDto>>> ListOpenIssuesAsync(
         string repositoryUrl);
+
+    Task<Result> CloneRepositoryAsync(
+        string repositoryUrl,
+        string directoryPath);
 }

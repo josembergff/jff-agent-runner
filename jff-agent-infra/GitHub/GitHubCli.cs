@@ -74,6 +74,27 @@ public class GitHubCli : IGitHubCli
         }
     }
 
+    public async Task<Result> CloneRepositoryAsync(
+        string repositoryUrl,
+        string directoryPath)
+    {
+        try
+        {
+            // gh runs git clone using its own stored credentials, so private repositories work.
+            await ExecuteAsync(
+                "repo",
+                "clone",
+                repositoryUrl,
+                directoryPath);
+
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail(ex);
+        }
+    }
+
     private static async Task<string> ExecuteAsync(
         params string[] arguments)
     {
