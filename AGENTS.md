@@ -67,7 +67,6 @@ These are known gaps, not bugs to fix in passing. Change them only when the task
 - `ExecutionStatusEnum.Completed` is never assigned, so finished work stays `Running`.
 - **View running** marks an execution `Failed` when its session no longer exists, even if the agent finished successfully.
 - **Cancel execution** only updates the database. It does not kill the `tmux` session.
-- `ProjectMenu` creates the local directory but does not clone the repository.
 - `GitHubCli.ListOpenIssuesAsync` returns only issues with the status `Ready` on a GitHub Project board, which requires the `read:project` scope.
 - `IssueImplementationPrompt` hardcodes `main` as the base branch.
 

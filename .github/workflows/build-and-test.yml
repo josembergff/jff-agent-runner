@@ -1,0 +1,29 @@
+name: CI/CD - API Dados TQS
+
+on:
+    pull_request:
+    push:
+        branches:
+            - main
+
+jobs:
+    test-build:
+        name: Teste e build (.NET 10)
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        container:
+            image: mcr.microsoft.com/dotnet/sdk:10.0
+
+        steps:
+            - name: Checkout código
+              uses: actions/checkout@v4
+
+            - name: Restore
+              run: dotnet restore jff-agent-runner.slnx
+
+            - name: Testes
+              run: dotnet test jff-agent-runner.slnx -c Release --verbosity normal
+
+            - name: Build
+              run: dotnet build jff-agent-runner.slnx -c Release --no-restore
