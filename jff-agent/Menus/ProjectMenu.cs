@@ -98,6 +98,7 @@ public class ProjectMenu
         };
 
         await defaultService.Create<Project>(0, project, false);
+        await defaultService.SaveChanges();
 
         AnsiConsole.MarkupLine("[green]Projeto cadastrado![/]");
         Console.ReadKey();
@@ -124,7 +125,10 @@ public class ProjectMenu
             $"Excluir o projeto [red]{project.Name}[/]?");
 
         if (confirm)
+        {
             await defaultService.DeleteByKey<Project, int>(0, project.Id, false);
+            await defaultService.SaveChanges();
+        }
 
         Console.ReadKey();
     }

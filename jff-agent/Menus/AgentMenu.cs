@@ -96,6 +96,7 @@ public class AgentMenu
         };
 
         await defaultService.Create<Domain.Entities.Agent>(0, agent, false);
+        await defaultService.SaveChanges();
 
         AnsiConsole.MarkupLine("[green]Agente cadastrado com sucesso![/]");
         Console.ReadKey(true);
@@ -121,6 +122,7 @@ public class AgentMenu
         if (AnsiConsole.Confirm($"Excluir o agente [red]{agent.Name}[/]?"))
         {
             await defaultService.DeleteByKey<Domain.Entities.Agent, int>(0, agent.Id, false);
+            await defaultService.SaveChanges();
             AnsiConsole.MarkupLine("[green]Agente excluído![/]");
         }
 
