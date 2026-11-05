@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "jff-agent (debug)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/jff-agent/bin/Debug/net10.0/jff-agent.dll",
+      "cwd": "${workspaceFolder}/jff-agent",
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    }
+  ]
+}
