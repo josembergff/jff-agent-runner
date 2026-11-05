@@ -1,0 +1,91 @@
+name: Publish APT package
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build, test and publish the package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write # create the GitHub Release
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build the package
+        run: ./utils/build-deb.sh "${GITHUB_REF_NAME#v}"
+
+      # A clean container proves that the dependencies resolve from Ubuntu's own feeds,
+      # and that the app starts and can open its database. The app then aborts because
+      # there is no terminal for its menu, so the check looks at the output, not the exit code.
+      - name: Test the installation on a clean Ubuntu 24.04
+        run: |
+          docker run --rm -v "$PWD/artifacts:/packages:ro" ubuntu:24.04 bash -euc '
+            apt-get update
+            apt-get install -y /packages/*.deb
+            output="$(jff-agent-runner </dev/null 2>&1 || true)"
+            echo "$output"
+            grep -q "Applying migration" <<< "$output"
+          '
+
+      - name: Generate and sign the APT repository
+        env:
+          APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+        run: |
+          test -n "$APT_GPG_PRIVATE_KEY"
+          sudo apt-get update
+          sudo apt-get install -y apt-utils
+          gpg --batch --import <<< "$APT_GPG_PRIVATE_KEY"
+
+          mkdir site
+          cp artifacts/*.deb site/
+          cd site
+
+          apt-ftparchive packages . > Packages
+          gzip -9 -k Packages
+
+          # Written outside the directory, so the Release file does not list itself.
+          apt-ftparchive \
+            -o APT::FTPArchive::Release::Origin=jff-agent-runner \
+            -o APT::FTPArchive::Release::Label=jff-agent-runner \
+            release . > "$RUNNER_TEMP/Release"
+          mv "$RUNNER_TEMP/Release" Release
+
+          gpg --batch --output InRelease --clearsign Release
+          gpg --batch --armor --output Release.gpg --detach-sign Release
+          gpg --batch --armor --output public.asc --export
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      # Pages only serves the latest version, so older packages stay available here.
+      - name: Attach the package to a GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" artifacts/*.deb --generate-notes --verify-tag \
+            || gh release upload "$GITHUB_REF_NAME" artifacts/*.deb --clobber
