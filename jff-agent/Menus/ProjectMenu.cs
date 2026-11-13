@@ -83,17 +83,37 @@ public class ProjectMenu(IDefaultService defaultService, IGitHubCli gitHubCli, I
 
     private async Task AddAsync()
     {
+        var repositoriesResult = await AnsiConsole.Status()
+            .StartAsync("Loading GitHub repositories...", _ => gitHubCli.ListRepositoriesAsync());
+
+        if (!repositoriesResult.Success || repositoriesResult.Value is null)
+        {
+            var error = repositoriesResult.Error ?? "Unknown error.";
+            logger.LogError("Failed to list GitHub repositories: {Error}", error);
+            AnsiConsole.MarkupLine($"[red]Error loading repositories: {Markup.Escape(error)}[/]");
+            Console.ReadKey();
+            return;
+        }
+
+        if (repositoriesResult.Value.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]No GitHub repositories found for the authenticated account.[/]");
+            Console.ReadKey();
+            return;
+        }
+
+        var repository = AnsiConsole.Prompt(
+            new SelectionPrompt<Domain.DTOs.Integrations.GitHubRepositoryDto>()
+                .Title("Select a GitHub repository:")
+                .UseConverter(r => r.NameWithOwner)
+                .AddChoices(repositoriesResult.Value));
+
         var project = new Project
         {
-            Name = AnsiConsole.Ask<string>("Name:"),
-            RepositoryUrl = AnsiConsole.Ask<string>("GitHub URL:"),
+            Name = AnsiConsole.Ask("Name:", repository.NameWithOwner.Split('/').Last()),
+            RepositoryUrl = repository.Url,
             LocalPath = AnsiConsole.Ask<string>("Local path:")
         };
-
-        if (!project.RepositoryUrl.Contains("https://github.com/"))
-        {
-            project.RepositoryUrl = $"https://github.com/{project.RepositoryUrl}";
-        }
 
         project.LocalPath = verifyAndCreateDirectory(project.LocalPath);
 

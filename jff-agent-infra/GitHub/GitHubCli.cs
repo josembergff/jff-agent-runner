@@ -6,6 +6,30 @@ using JffCsharpTools.Application.Common;
 
 public class GitHubCli : IGitHubCli
 {
+    public async Task<Result<List<GitHubRepositoryDto>>> ListRepositoriesAsync()
+    {
+        try
+        {
+            var output = await ExecuteAsync(
+                "repo",
+                "list",
+                "--limit",
+                int.MaxValue.ToString(),
+                "--json",
+                "nameWithOwner,url");
+
+            var repositories = JsonSerializer.Deserialize<List<GitHubRepositoryDto>>(
+                output,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+
+            return Result<List<GitHubRepositoryDto>>.Ok(repositories);
+        }
+        catch (Exception ex)
+        {
+            return Result<List<GitHubRepositoryDto>>.Fail(ex);
+        }
+    }
+
     public async Task<Result<GitHubIssueDto>> GetIssueAsync(
         string repository,
         int issueNumber)

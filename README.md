@@ -116,12 +116,12 @@ Agent sessions run in their own `tmux` server, so they keep running if you close
 
 ### 1. Add a project
 
-Go to **Projects → Add project** and fill in:
+Go to **Projects → Add project**, choose a repository from the list of repositories available to the authenticated `gh` account, then fill in:
 
 | Field | Value |
 | --- | --- |
 | Name | Any display name |
-| GitHub URL | `https://github.com/owner/repo` or `owner/repo` |
+| Repository | Selected from the authenticated GitHub account's repository list; its URL is filled in automatically |
 | Local path | A relative name, such as `my-repo`, or an absolute path |
 
 A relative path is placed under `~/jff-agent-runner/git-repositories/`.
