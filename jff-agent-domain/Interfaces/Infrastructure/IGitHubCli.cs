@@ -5,6 +5,8 @@ namespace Domain.Interfaces.Infrastructure;
 
 public interface IGitHubCli
 {
+    Task<Result<List<GitHubRepositoryDto>>> ListRepositoriesAsync();
+
     Task<Result<GitHubIssueDto>> GetIssueAsync(
         string repository,
         int issueNumber);
