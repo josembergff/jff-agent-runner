@@ -80,13 +80,35 @@ Install the web interface alongside it when needed:
 sudo apt install jff-agent-runner-web
 ```
 
-Start the web app as the Linux user that has authenticated `gh` and configured the agent CLIs:
+To keep the web app running after you disconnect from SSH and start it again after a reboot, configure a user-level `systemd` service. Run these commands as the Linux user that has authenticated `gh` and configured the agent CLIs:
 
 ```bash
-jff-agent-runner-web
+mkdir -p ~/.config/systemd/user
+cat > ~/.config/systemd/user/jff-agent-runner-web.service <<'EOF'
+[Unit]
+Description=jff-agent-runner web interface
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h
+Environment=HOME=%h
+Environment="PATH=%h/.local/bin:%h/.npm-global/bin:%h/.bun/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/usr/bin/jff-agent-runner-web
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+EOF
+
+sudo loginctl enable-linger "$USER"
+systemctl --user daemon-reload
+systemctl --user enable --now jff-agent-runner-web
 ```
 
-Open `http://<server>:3031`. On first access, create the web username and password; later visits require that login. The password is stored as a one-way hash in the shared `Configurations` table. Keep port 3031 behind a trusted network or HTTPS reverse proxy.
+If an agent CLI is installed in another directory, add that directory to the service's `PATH` above, or configure the agent with its full executable path. Check the service with `systemctl --user status jff-agent-runner-web`, and follow its logs with `journalctl --user -u jff-agent-runner-web -f`. Stop it with `systemctl --user disable --now jff-agent-runner-web`.
+
+Open `http://<server>:3031`. On first access, create the web username and password; later visits require that login. The password is stored as a one-way hash in the shared `Configurations` table. Keep port 3031 behind a trusted network or HTTPS reverse proxy. For a temporary foreground run instead, execute `jff-agent-runner-web` directly; closing that terminal may stop the server.
 
 To update later, run the commands above again, or update it with the rest of the system using `sudo apt update && sudo apt upgrade`. Your database is kept and migrated on the next run, and agent sessions that are already running are not affected.
 
