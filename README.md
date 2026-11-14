@@ -9,13 +9,20 @@ jff-agent only orchestrates. It does not install, authenticate or configure anyt
 1. You register **projects** (a GitHub repository and a local clone) and **agents** (a CLI command such as `claude`).
 2. You start an **execution** by choosing a project, an agent and an issue.
 3. jff-agent opens a detached `tmux` session named `jff-<id>` in the project directory, starts the agent and pastes in a prompt that tells it to:
-   - read the issue with `gh issue view`
+   - read the issue with `gh issue view <number> --json title,body,labels --jq '{title, body, labels}'`
    - work on a branch named `agent/<issue-number>`, created from `main`
    - implement the issue, then run the tests and the build
    - push the branch and open a Pull Request to `main` with `Closes #<issue-number>`
 4. You follow the execution from the menu, or attach to the session to talk to the agent directly.
 
 The agent never merges: the prompt forbids merging and committing to `main`, so the Pull Request is left for you to review.
+
+To read issue details, agents are instructed to use the GitHub CLI JSON output for the title, body and labels:
+
+```bash
+gh issue view 34 --json title,body,labels \\
+  --jq '{title, body, labels}'
+```
 
 ## Security model
 

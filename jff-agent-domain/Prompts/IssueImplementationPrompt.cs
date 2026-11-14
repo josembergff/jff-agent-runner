@@ -7,7 +7,12 @@ public static class IssueImplementationPrompt
 
         ### STAGE 1 — ANALYSIS
 
-        1. Read the Issue using the GitHub CLI (`gh issue view {{issueNumber}}`).
+        1. Read the Issue using the GitHub CLI with this exact command pattern, replacing `34` with `{{issueNumber}}`:
+           ```bash
+           gh issue view {{issueNumber}} --json title,body,labels \\
+             --jq '{title, body, labels}'
+           ```
+           Use the returned title, body and labels as the issue information. Do not use a different `gh issue view` output format.
         2. Analyze the requirements and acceptance criteria.
         3. Analyze the existing architecture, structure and patterns.
         4. Identify the files and components that need to change.

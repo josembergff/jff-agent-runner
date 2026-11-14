@@ -49,6 +49,7 @@ Shared base types (`DefaultEntity`, `DefaultService`, `IDefaultRepository`, `Res
 - **External processes:** add arguments through `ProcessStartInfo.ArgumentList`, never by building a shell string. This keeps user input from being parsed by a shell. The agent command is the one deliberate exception: `Command` and `Arguments` are joined and given to `tmux` as one command line.
 - **tmux targets:** always use `ExactTarget(sessionName)`. A plain `-t` matches by prefix, so `jff-1` could hit `jff-12`.
 - **Prompt delivery:** keep the bracketed paste in `SendInstructionsAsync`. Sending the prompt line by line could submit each line as its own message.
+- **Issue details for agents:** when instructing an executor to read an issue, use `gh issue view <number> --json title,body,labels --jq '{title, body, labels}'` so it gets a consistent title, body and labels payload.
 - **Errors:** infrastructure methods return `Result` or `Result<T>` rather than throwing. Each menu's `ShowMenuAsync` catches exceptions, logs them and returns `Result.Fail`.
 - **Console output:** wrap dynamic text in `Markup.Escape(...)` when using Spectre markup. Issue titles and bodies often contain `[` and `]`, which otherwise break rendering or throw.
 - **Language:** user-facing strings, code comments and documentation are in English.
