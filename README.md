@@ -80,6 +80,8 @@ Install the web interface alongside it when needed:
 sudo apt install jff-agent-runner-web
 ```
 
+### Option 1: systemd (recommended)
+
 To keep the web app running after you disconnect from SSH and start it again after a reboot, configure a user-level `systemd` service. Run these commands as the Linux user that has authenticated `gh` and configured the agent CLIs:
 
 ```bash
@@ -108,7 +110,25 @@ systemctl --user enable --now jff-agent-runner-web
 
 If an agent CLI is installed in another directory, add that directory to the service's `PATH` above, or configure the agent with its full executable path. Check the service with `systemctl --user status jff-agent-runner-web`, and follow its logs with `journalctl --user -u jff-agent-runner-web -f`. Stop it with `systemctl --user disable --now jff-agent-runner-web`.
 
-Open `http://<server>:3031`. On first access, create the web username and password; later visits require that login. The password is stored as a one-way hash in the shared `Configurations` table. Keep port 3031 behind a trusted network or HTTPS reverse proxy. For a temporary foreground run instead, execute `jff-agent-runner-web` directly; closing that terminal may stop the server.
+All commands above run as that Linux user. Only `sudo loginctl enable-linger "$USER"` requires `sudo`; it enables the user service to start at boot and remain active after logout.
+
+### Option 2: tmux
+
+To keep the web app running after disconnecting from SSH without configuring `systemd`, start it in a detached `tmux` session as the same Linux user:
+
+```bash
+tmux new-session -d -s jff-agent-runner-web 'jff-agent-runner-web'
+```
+
+The web app will be available at `http://<server>:3031`. Reattach to its terminal with:
+
+```bash
+tmux attach -t '=jff-agent-runner-web'
+```
+
+Detach again with `Ctrl+B`, then `D`. Check the session with `tmux ls`, or stop the web app with `tmux kill-session -t '=jff-agent-runner-web'`. A `tmux` session survives SSH logout but does not restart automatically after a server reboot.
+
+On first access, create the web username and password; later visits require that login. The password is stored as a one-way hash in the shared `Configurations` table. Keep port 3031 behind a trusted network or HTTPS reverse proxy. For a temporary foreground run, execute `jff-agent-runner-web` directly; closing that terminal may stop the server.
 
 To update later, run the commands above again, or update it with the rest of the system using `sudo apt update && sudo apt upgrade`. Your database is kept and migrated on the next run, and agent sessions that are already running are not affected.
 
