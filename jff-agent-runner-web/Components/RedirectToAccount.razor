@@ -1,0 +1,9 @@
+@inject IDbContextFactory<JffAgentDbContext> DbFactory
+@inject NavigationManager Navigation
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        Navigation.NavigateTo(await db.Configurations.AnyAsync() ? "/Account/Login" : "/Account/Setup", forceLoad: true);
+    }
+}

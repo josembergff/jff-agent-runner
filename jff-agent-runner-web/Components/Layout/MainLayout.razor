@@ -1,0 +1,5 @@
+@inherits LayoutComponentBase
+<div class="container-fluid"><div class="row min-vh-100"><nav class="col-md-2 bg-dark text-white p-3">
+    <h5>jff-agent-runner</h5><NavLink class="nav-link text-white" href="/">Dashboard</NavLink><NavLink class="nav-link text-white" href="/projects">Projects</NavLink><NavLink class="nav-link text-white" href="/agents">Agents</NavLink><NavLink class="nav-link text-white" href="/executions">Executions</NavLink>
+    <form method="post" action="/account/logout" class="mt-4"><AntiforgeryToken /><button class="btn btn-outline-light btn-sm">Sign out</button></form>
+</nav><main class="col p-4">@Body</main></div></div>

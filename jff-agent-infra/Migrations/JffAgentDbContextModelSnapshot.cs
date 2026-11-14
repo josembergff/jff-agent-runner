@@ -17,6 +17,18 @@ namespace jff_agent_infra.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
+            modelBuilder.Entity("Domain.Entities.Configuration", b =>
+                {
+                    b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("INTEGER");
+                    b.Property<DateTime>("CreatedAt").HasColumnType("TEXT");
+                    b.Property<int>("CreatorUserId").HasColumnType("INTEGER");
+                    b.Property<string>("PasswordHash").IsRequired().HasColumnType("TEXT");
+                    b.Property<DateTime?>("UpdatedAt").HasColumnType("TEXT");
+                    b.Property<string>("Username").IsRequired().HasColumnType("TEXT");
+                    b.HasKey("Id");
+                    b.ToTable("Configurations");
+                });
+
             modelBuilder.Entity("Domain.Entities.Agent", b =>
                 {
                     b.Property<int>("Id")

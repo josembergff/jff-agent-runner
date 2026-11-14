@@ -31,11 +31,12 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Build the package
-        run: ./utils/build-deb.sh "${GITHUB_REF_NAME#v}"
+        run: |
+          ./utils/build-deb.sh "${GITHUB_REF_NAME#v}"
+          ./utils/build-web-deb.sh "${GITHUB_REF_NAME#v}"
 
       # A clean container proves that the dependencies resolve from Ubuntu's own feeds,
-      # and that the app starts and can open its database. The app then aborts because
-      # there is no terminal for its menu, so the check looks at the output, not the exit code.
+      # and both apps can start against the shared database.
       - name: Test the installation on a clean Ubuntu 24.04
         run: |
           docker run --rm -v "$PWD/artifacts:/packages:ro" ubuntu:24.04 bash -euc '
@@ -44,6 +45,10 @@ jobs:
             output="$(jff-agent-runner </dev/null 2>&1 || true)"
             echo "$output"
             grep -q "Applying migration" <<< "$output"
+            test -x /usr/bin/jff-agent-runner-web
+            web_output="$(timeout 10s jff-agent-runner-web 2>&1 || true)"
+            echo "$web_output"
+            grep -q "Now listening on: http://0.0.0.0:3031" <<< "$web_output"
           '
 
       - name: Generate and sign the APT repository

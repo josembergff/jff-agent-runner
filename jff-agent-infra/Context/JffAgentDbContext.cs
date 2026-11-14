@@ -9,4 +9,5 @@ public class JffAgentDbContext(DbContextOptions<JffAgentDbContext> options)
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<Agent> Agents => Set<Agent>();
     public DbSet<Execution> Executions => Set<Execution>();
+    public DbSet<Configuration> Configurations => Set<Configuration>();
 }
