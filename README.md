@@ -15,6 +15,8 @@ jff-agent only orchestrates. It does not install, authenticate or configure anyt
    - push the branch and open a Pull Request to `main` with `Closes #<issue-number>`
 4. You follow the execution from the menu, or attach to the session to talk to the agent directly.
 
+The `jff-agent-runner-web` package provides the same project, agent and execution management through a Blazor web interface on port `3031`. Both applications use the same SQLite database and run GitHub CLI, tmux and configured agent commands as the Linux user that starts them.
+
 The agent never merges: the prompt forbids merging and committing to `main`, so the Pull Request is left for you to review.
 
 To read issue details, agents are instructed to use the GitHub CLI JSON output for the title, body and labels:
@@ -72,9 +74,23 @@ sudo apt update
 sudo apt install jff-agent-runner
 ```
 
+Install the web interface alongside it when needed:
+
+```bash
+sudo apt install jff-agent-runner-web
+```
+
+Start the web app as the Linux user that has authenticated `gh` and configured the agent CLIs:
+
+```bash
+jff-agent-runner-web
+```
+
+Open `http://<server>:3031`. On first access, create the web username and password; later visits require that login. The password is stored as a one-way hash in the shared `Configurations` table. Keep port 3031 behind a trusted network or HTTPS reverse proxy.
+
 To update later, run the commands above again, or update it with the rest of the system using `sudo apt update && sudo apt upgrade`. Your database is kept and migrated on the next run, and agent sessions that are already running are not affected.
 
-To remove the app, run `sudo apt remove jff-agent-runner`. This keeps your database and project directories.
+To remove either app, run `sudo apt remove jff-agent-runner` or `sudo apt remove jff-agent-runner-web`. This keeps your database and project directories.
 
 The repository only serves the latest version. To go back to an older one, download its `.deb` from [Releases](https://github.com/josembergff/jff-agent-runner/releases) and run `sudo apt install --allow-downgrades ./<file>.deb`.
 
@@ -112,6 +128,8 @@ If you installed from source, run this from the clone:
 cd jff-agent-runner
 dotnet run --project jff-agent
 ```
+
+To start the web interface from source, run `dotnet run --project jff-agent-runner-web`; it listens on port `3031`.
 
 Error log files are written to `logs/` under the directory you start the app from, so start it from one that you can write to.
 
@@ -225,10 +243,11 @@ The prompt tells agents to stop and ask when an issue is ambiguous, so an execut
 
 ## Development
 
-The solution has three projects:
+The solution has four projects:
 
 ```text
 jff-agent/          Terminal UI (Spectre.Console menus) and app startup
+jff-agent-runner-web/ Blazor Server UI and web account authentication
 jff-agent-domain/   Entities, interfaces, ExecutionService and the agent prompt
 jff-agent-infra/    EF Core with SQLite, plus the gh and tmux process wrappers
 ```
@@ -250,7 +269,7 @@ git push origin v1.2.3
 
 Tag a commit on `main`. Each tag needs a higher version than the last, or servers will not update.
 
-To build a package without publishing it, run `./utils/build-deb.sh 1.2.3` on Debian or Ubuntu. The file is written to `artifacts/`.
+To build packages without publishing them, run `./utils/build-deb.sh 1.2.3` and `./utils/build-web-deb.sh 1.2.3` on Debian or Ubuntu. Both files are written to `artifacts/`.
 
 **One-time repository setup.** Run this once, before the first tag, on a machine with `gh` and `gpg`. It enables GitHub Pages and allows version tags to deploy to it, because the `github-pages` environment otherwise accepts only the default branch:
 

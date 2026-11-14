@@ -6,7 +6,7 @@ Guidance for AI coding agents working on this repository. For what the product d
 
 jff-agent-runner is a .NET 10 terminal app that runs on a Linux server. It delegates GitHub Issues to agent CLIs that are already installed and authenticated there, with each agent running in its own `tmux` session.
 
-It is an orchestrator only. **It must never ask for, store or manage API keys, tokens or licenses.** Authentication belongs to `gh` and to each agent CLI. Do not add features that break this rule without an explicit request.
+It is an orchestrator only. **It must never ask for, store or manage API keys, tokens or licenses.** GitHub and agent authentication belongs to `gh` and each agent CLI. The web interface has a separate local login; store only a password hash in `Configurations`.
 
 ## Commands
 
@@ -16,6 +16,7 @@ dotnet run --project jff-agent         # run the app (needs an interactive termi
 dotnet tool restore                    # install dotnet-ef from dotnet-tools.json
 ./utils/new-migration.sh <Name>        # add a migration AND apply it to the local database
 ./utils/build-deb.sh <x.y.z>           # build the .deb into artifacts/ (Debian or Ubuntu only)
+./utils/build-web-deb.sh <x.y.z>      # build the Blazor web .deb
 ```
 
 There is no test project yet, so validate changes by building. Exercise behavior by running the app, which needs `tmux` and an authenticated `gh`. Say so in your report when you could not run something.
@@ -29,6 +30,7 @@ Dependencies point one way: `jff-agent` → `jff-agent-infra` → `jff-agent-dom
 | Project | Contents |
 | --- | --- |
 | `jff-agent` | `Program.cs` (DI, logging, automatic migration), `App.cs` (main menu), `Menus/` (Spectre.Console screens) |
+| `jff-agent-runner-web` | Blazor Server UI, cookie authentication and Razor Pages for initial account setup/login |
 | `jff-agent-domain` | `Entities/`, `Enums/`, `DTOs/`, `Interfaces/`, `Services/ExecutionService.cs`, `Prompts/IssueImplementationPrompt.cs` |
 | `jff-agent-infra` | `Context/` (EF Core DbContext), `Migrations/`, `GitHub/GitHubCli.cs`, `Tmux/TmuxExecutor.cs` |
 
@@ -57,7 +59,7 @@ Shared base types (`DefaultEntity`, `DefaultService`, `IDefaultRepository`, `Res
 
 ## Database changes
 
-- Entity changes need a migration in `jff-agent-infra/Migrations`. Migrations run automatically at app startup, so they reach every user's database on their next run.
+- Entity changes need a migration in `jff-agent-infra/Migrations`. Migrations run automatically at app startup, so they reach every user's database on their next run from either app.
 - Never edit a migration that has already been committed. Add a new one.
 - `Execution.SesionAgentCommand` is misspelled and is a real database column. Renaming it requires a migration.
 - `./utils/new-migration.sh` also updates the real database at `~/.config/jff-agent-runner/database.db`. Take care when experimenting with schema changes.
@@ -78,7 +80,7 @@ These are known gaps, not bugs to fix in passing. Change them only when the task
 
 ## Packaging
 
-`utils/build-deb.sh` declares the package dependencies, and `.github/workflows/publish-apt.yml` publishes the package when a `vX.Y.Z` tag is pushed. Update the `Depends` line when the app starts needing another shared framework or system tool. It needs `aspnetcore-runtime-10.0`, not only `dotnet-runtime-10.0`, because a dependency brings in the ASP.NET Core shared framework.
+`utils/build-deb.sh` and `utils/build-web-deb.sh` declare package dependencies, and `.github/workflows/publish-apt.yml` publishes both packages when a `vX.Y.Z` tag is pushed. Update `Depends` when an app needs another shared framework or system tool. Both need `aspnetcore-runtime-10.0`.
 
 ## Repository rules
 
