@@ -126,7 +126,7 @@ The web app will be available at `http://<server>:3031`. Reattach to its termina
 tmux attach -t '=jff-agent-runner-web'
 ```
 
-Detach again with `Ctrl+B`, then `D`. Check the session with `tmux ls`, or stop the web app with `tmux kill-session -t '=jff-agent-runner-web'`. A `tmux` session survives SSH logout but does not restart automatically after a server reboot.
+To detach in macOS Terminal, press **Control+B** (hold Control while pressing B), release both keys, then press **D**. Press them in sequence; do not use Command (⌘). Check the session with `tmux ls`, or stop the web app with `tmux kill-session -t '=jff-agent-runner-web'`. A `tmux` session survives SSH logout but does not restart automatically after a server reboot.
 
 On first access, create the web username and password; later visits require that login. The password is stored as a one-way hash in the shared `Configurations` table. Keep port 3031 behind a trusted network or HTTPS reverse proxy. For a temporary foreground run, execute `jff-agent-runner-web` directly; closing that terminal may stop the server.
 
