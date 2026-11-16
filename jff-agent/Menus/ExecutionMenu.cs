@@ -387,6 +387,12 @@ public class ExecutionMenu(
 
         if (AnsiConsole.Confirm("Do you want to cancel this execution?"))
         {
+            if (!await CloseSessionAsync(execution.SessionName))
+            {
+                Console.ReadKey(true);
+                return;
+            }
+
             execution.Status = ExecutionStatusEnum.Cancelled;
             await defaultService.UpdateByKey<Execution, int>(0, execution, execution.Id, false);
             await defaultService.SaveChanges();
@@ -413,22 +419,43 @@ public class ExecutionMenu(
                 .UseConverter(e => $"Issue #{e.IssueNumber} - {e.Status}")
                 .AddChoices(executions.Value));
 
-        if (execution.Status == ExecutionStatusEnum.Running)
-        {
-            AnsiConsole.MarkupLine(
-                "[red]A running execution cannot be deleted. Cancel it first.[/]");
-
-            Console.ReadKey(true);
-            return;
-        }
-
         if (AnsiConsole.Confirm("Do you want to permanently delete this execution?"))
         {
+            if (!await CloseSessionAsync(execution.SessionName))
+            {
+                Console.ReadKey(true);
+                return;
+            }
+
             await defaultService.DeleteByKey<Execution, int>(0, execution.Id, false);
             await defaultService.SaveChanges();
             AnsiConsole.MarkupLine("[green]Execution deleted.[/]");
         }
 
         Console.ReadKey(true);
+    }
+
+    private async Task<bool> CloseSessionAsync(string sessionName)
+    {
+        var hasSession = await tmuxExecutor.HasSessionAsync(sessionName);
+        if (!hasSession.Success)
+        {
+            logger.LogError(hasSession.Error, "Failed to check tmux session {SessionName}.", sessionName);
+            AnsiConsole.MarkupLine(
+                $"[red]Could not check session {Markup.Escape(sessionName)}: {Markup.Escape(hasSession.Error ?? "Unknown error.")}[/]");
+            return false;
+        }
+
+        if (!hasSession.Value)
+            return true;
+
+        var result = await tmuxExecutor.KillSessionAsync(sessionName);
+        if (result.Success)
+            return true;
+
+        logger.LogError(result.Error, "Failed to close tmux session {SessionName}.", sessionName);
+        AnsiConsole.MarkupLine(
+            $"[red]Could not close session {Markup.Escape(sessionName)}: {Markup.Escape(result.Error ?? "Unknown error.")}[/]");
+        return false;
     }
 }
