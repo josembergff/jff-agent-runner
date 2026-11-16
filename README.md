@@ -266,6 +266,7 @@ The prompt tells agents to proceed without routine questions. They should ask on
 
 ## Known limitations
 
+- **An existing cached Blazor runtime can break the web UI after a package update.** If the issue selector does not load, clear the browser and reverse proxy/CDN cache for `/_framework/blazor.web.js` and reload the page.
 - **Finished work still shows as Running.** jff-agent does not detect that an agent has finished. Check for the Pull Request on GitHub, or attach to the session.
 - **A successful agent can be marked Failed.** If the session has closed when you open **View running**, the execution is marked Failed even if the agent opened its Pull Request first.
 - **Cancelling does not stop the agent.** It only changes the status. To stop the agent, end its session with `tmux kill-session -t "=jff-12"`.
