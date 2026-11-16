@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://0.0.0.0:3031");
+builder.WebHost.UseStaticWebAssets();
 var dataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "jff-agent-runner");
 Directory.CreateDirectory(dataDirectory);
 var databasePath = Path.Combine(dataDirectory, "database.db");
@@ -47,7 +48,7 @@ var app = builder.Build();
 await using (var scope = app.Services.CreateAsyncScope())
     await scope.ServiceProvider.GetRequiredService<JffAgentDbContext>().Database.MigrateAsync();
 
-app.UseStaticFiles();
+app.MapStaticAssets();
 app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
