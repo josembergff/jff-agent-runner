@@ -10,14 +10,17 @@ jff-agent only orchestrates. It does not install, authenticate or configure anyt
 2. You start an **execution** by choosing a project, an agent and an issue.
 3. jff-agent opens a detached `tmux` session named `jff-<id>` in the project directory, starts the agent and pastes in a prompt that tells it to:
    - read the issue with `gh issue view <number> --json title,body,labels --jq '{title, body, labels}'`
+   - follow the repository's `AGENT_INSTRUCTIONS.md` and `AGENTS.md`
    - work on a branch named `agent/<issue-number>`, created from `main`
-   - implement the issue, then run the tests and the build
+   - implement the issue, then run the relevant checks and build
    - push the branch and open a Pull Request to `main` with `Closes #<issue-number>`
 4. You follow the execution from the menu, or attach to the session to talk to the agent directly.
 
 The `jff-agent-runner-web` package provides the same project, agent and execution management through a Blazor web interface on port `3031`. Both applications use the same SQLite database and run GitHub CLI, tmux and configured agent commands as the Linux user that starts them.
 
 The agent never merges: the prompt forbids merging and committing to `main`, so the Pull Request is left for you to review.
+
+Every execution is instructed to complete implementation, validation, commit, push and Pull Request creation without pausing for routine confirmation. Agents should resolve ordinary ambiguity from the issue and repository conventions. They may ask only when an essential requirement cannot reasonably be inferred or a real external blocker prevents progress; they should finish independent work and state the blocker clearly.
 
 To read issue details, agents are instructed to use the GitHub CLI JSON output for the title, body and labels:
 
@@ -250,7 +253,7 @@ tmux attach -t jff-12
 
 Detach with `Ctrl+B`, then `D`. Do not exit the agent unless you mean to end the session.
 
-The prompt tells agents to stop and ask when an issue is ambiguous, so an execution that seems stuck may be waiting for you.
+The prompt tells agents to proceed without routine questions. They should ask only when an essential requirement cannot reasonably be inferred or an external blocker prevents progress. An execution that appears stuck may be running checks or waiting on a real blocker; attach to its session to inspect it.
 
 ### Execution statuses
 

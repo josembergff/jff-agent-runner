@@ -5,6 +5,12 @@ public static class IssueImplementationPrompt
     public static string Build(int issueNumber) => $$"""
         Implement Issue #{{issueNumber}} of this repository.
 
+        Before starting, read and follow the repository's `AGENT_INSTRUCTIONS.md` and `AGENTS.md`.
+        These are mandatory instructions for this execution. Complete the implementation, validation,
+        commit, push and Pull Request without asking for routine confirmation. Resolve ordinary
+        ambiguity from the issue and repository context. Ask only if an essential requirement cannot
+        be inferred or a real external blocker prevents progress; finish independent work first.
+
         ### STAGE 1 — ANALYSIS
 
         1. Read the Issue using the GitHub CLI with this exact command pattern, replacing `34` with `{{issueNumber}}`:
@@ -16,7 +22,9 @@ public static class IssueImplementationPrompt
         2. Analyze the requirements and acceptance criteria.
         3. Analyze the existing architecture, structure and patterns.
         4. Identify the files and components that need to change.
-        5. If there are ambiguities or insufficient information, ask before implementing.
+        5. Resolve routine ambiguity from the acceptance criteria and repository conventions. Ask only
+           if an essential requirement cannot reasonably be inferred; do not use questions to defer
+           implementation or the required Pull Request workflow.
 
         ### STAGE 2 — IMPLEMENTATION
 
@@ -29,7 +37,7 @@ public static class IssueImplementationPrompt
 
         ### STAGE 3 — PULL REQUEST
 
-        After completing the implementation and validating the tests:
+        After completing the implementation and running the relevant available checks:
 
         1. Commit the changes to the current branch.
         2. Push the branch `agent/{{issueNumber}}` to GitHub.
@@ -48,7 +56,9 @@ public static class IssueImplementationPrompt
         - Do not modify files outside the scope without justification.
         - Do not push other branches.
         - You are authorized to push only the branch `agent/{{issueNumber}}` to create the requested Pull Request.
-        - If there are ambiguities, stop and ask for clarification.
+        - Do not stop for routine confirmation. If an essential requirement cannot reasonably be
+          inferred or an external blocker prevents progress, complete independent work first and
+          report the precise blocker and action needed.
         - Do not report tests as passing without running them.
         - When finished, present a summary of the changes, the tests run and the Pull Request link.
         """;
