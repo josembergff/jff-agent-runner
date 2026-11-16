@@ -48,6 +48,10 @@ Shared base types (`DefaultEntity`, `DefaultService`, `IDefaultRepository`, `Res
 
 ## Conventions
 
+- **Unattended issue execution:** follow [`AGENT_INSTRUCTIONS.md`](AGENT_INSTRUCTIONS.md) for every delegated issue. Make routine implementation decisions from the issue and repository context; do not pause to ask whether to proceed with implementation, commits, pushing the issue branch, or opening the requested Pull Request. Ask only when an essential requirement is genuinely impossible to infer or an external blocker prevents progress. If blocked, complete all independent work and report the exact blocker and the action needed.
+- **Branch and Pull Request:** use `agent/<issue-number>` from `main`; commit and push only that branch and open a PR targeting `main` with `Closes #<issue-number>`. Never commit to `main` or merge the PR. Do not overwrite or discard pre-existing user changes.
+- **Validation:** run relevant checks and report what actually ran and its outcome. Do not stop after editing to ask permission for the branch/commit/push/PR steps required by the task.
+
 - **External processes:** add arguments through `ProcessStartInfo.ArgumentList`, never by building a shell string. This keeps user input from being parsed by a shell. The agent command is the one deliberate exception: `Command` and `Arguments` are joined and given to `tmux` as one command line.
 - **tmux targets:** always use `ExactTarget(sessionName)`. A plain `-t` matches by prefix, so `jff-1` could hit `jff-12`.
 - **Prompt delivery:** keep the bracketed paste in `SendInstructionsAsync`. Sending the prompt line by line could submit each line as its own message.
