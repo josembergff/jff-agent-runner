@@ -15,8 +15,7 @@ public static class IssueImplementationPrompt
 
         1. Read the Issue using the GitHub CLI with this exact command pattern, replacing `34` with `{{issueNumber}}`:
            ```bash
-           gh issue view {{issueNumber}} --json title,body,labels \\
-             --jq '{title, body, labels}'
+           gh issue view {{issueNumber}} --json title,body,labels --jq '{title, body, labels}'
            ```
            Use the returned title, body and labels as the issue information. Do not use a different `gh issue view` output format.
         2. Analyze the requirements and acceptance criteria.

@@ -25,8 +25,7 @@ Every execution is instructed to complete implementation, validation, commit, pu
 To read issue details, agents are instructed to use the GitHub CLI JSON output for the title, body and labels:
 
 ```bash
-gh issue view 34 --json title,body,labels \\
-  --jq '{title, body, labels}'
+gh issue view 34 --json title,body,labels --jq '{title, body, labels}'
 ```
 
 ## Security model
@@ -230,7 +229,7 @@ Also open each agent once by hand inside a new project directory. Some CLIs show
 
 ### 3. Prepare the issue
 
-The issue list only shows issues that are **open** and have the status **Ready** on a GitHub Project board. An issue that is not on a board, or is in another column, will not appear.
+The terminal menu only shows issues that are **open** and have the status **Ready** on a GitHub Project board. The web interface lists all **open** issues from the selected repository. The terminal menu requires the `read:project` scope; issues not on a board or in another column do not appear there.
 
 ### 4. Start an execution
 

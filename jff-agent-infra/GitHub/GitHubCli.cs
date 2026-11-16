@@ -98,6 +98,37 @@ public class GitHubCli : IGitHubCli
         }
     }
 
+    public async Task<Result<List<GitHubIssueDto>>> ListRepositoryOpenIssuesAsync(
+        string repositoryUrl)
+    {
+        try
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(repositoryUrl);
+
+            var output = await ExecuteAsync(
+                "issue",
+                "list",
+                "--repo",
+                repositoryUrl,
+                "--state",
+                "open",
+                "--limit",
+                int.MaxValue.ToString(),
+                "--json",
+                "number,title,body,state,url");
+
+            var issues = JsonSerializer.Deserialize<List<GitHubIssueDto>>(
+                output,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+
+            return Result<List<GitHubIssueDto>>.Ok(issues);
+        }
+        catch (Exception ex)
+        {
+            return Result<List<GitHubIssueDto>>.Fail(ex);
+        }
+    }
+
     public async Task<Result> CloneRepositoryAsync(
         string repositoryUrl,
         string directoryPath)
@@ -139,7 +170,16 @@ public class GitHubCli : IGitHubCli
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
 
-        await process.WaitForExitAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            process.Kill(entireProcessTree: true);
+            throw new TimeoutException("GitHub CLI did not respond within 30 seconds.");
+        }
 
         var output = await outputTask;
         var error = await errorTask;
