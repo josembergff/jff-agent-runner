@@ -34,6 +34,7 @@ public class ExecutionMenu(
                             "List executions by project",
                             "List running executions",
                             "View running",
+                            "Send Enter",
                             "Complete execution",
                             "Cancel execution",
                             "Delete execution",
@@ -63,6 +64,10 @@ public class ExecutionMenu(
 
                     case "View running":
                         await ViewRunningAsync();
+                        break;
+
+                    case "Send Enter":
+                        await SendEnterAsync();
                         break;
 
                     case "Complete execution":
@@ -362,6 +367,35 @@ public class ExecutionMenu(
         }
 
         AnsiConsole.MarkupLine("\n[grey]Press any key to continue.[/]");
+        Console.ReadKey(true);
+    }
+
+    private async Task SendEnterAsync()
+    {
+        var executions = await defaultService.Get<Execution>(
+            f => f.Status == ExecutionStatusEnum.Running || f.Status == ExecutionStatusEnum.Pending,
+            new string[] { "Project", "Agent" });
+
+        if (executions.Value.Count() == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]No executions are running or pending.[/]");
+            Console.ReadKey(true);
+            return;
+        }
+
+        var execution = AnsiConsole.Prompt(
+            new SelectionPrompt<Execution>()
+                .Title("Select an execution to send Enter:")
+                .UseConverter(e => Markup.Escape(
+                    $"{e.SessionName} - {e.Project.Name} - {e.Agent.Name} - Issue #{e.IssueNumber} - {e.Status}"))
+                .AddChoices(executions.Value));
+
+        var result = await tmuxExecutor.SendEnterAsync(execution.SessionName);
+        if (result.Success)
+            AnsiConsole.MarkupLine($"[green]Enter sent to {Markup.Escape(execution.SessionName)}.[/]");
+        else
+            AnsiConsole.MarkupLine($"[red]Could not send Enter: {Markup.Escape(result.Error ?? "Unknown error.")}[/]");
+
         Console.ReadKey(true);
     }
 

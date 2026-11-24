@@ -14,6 +14,8 @@ public interface ITmuxExecutor
 
     Task<Result> SendInstructionsAsync(string sessionName, string instructions);
 
+    Task<Result> SendEnterAsync(string sessionName);
+
     Task<Result<bool>> HasSessionAsync(string sessionName);
 
     Task<Result<string>> GetOutputAsync(string sessionName);
