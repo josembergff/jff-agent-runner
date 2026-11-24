@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
 public class ExecutionMenu(
-    IDefaultService defaultService, ILogger<ExecutionMenu> logger, IExecutionService executionService, IGitHubCli gitHubCli, ITmuxExecutor tmuxExecutor)
+    IDefaultService defaultService, ILogger<ExecutionMenu> logger, IExecutionService executionService, IGitHubCli gitHubCli, ITmuxExecutor tmuxExecutor, IExecutionWorkspace executionWorkspace)
 {
 
     public async Task<Result> ShowMenuAsync()
@@ -34,6 +34,7 @@ public class ExecutionMenu(
                             "List executions by project",
                             "List running executions",
                             "View running",
+                            "Complete execution",
                             "Cancel execution",
                             "Delete execution",
                             "Back"));
@@ -62,6 +63,10 @@ public class ExecutionMenu(
 
                     case "View running":
                         await ViewRunningAsync();
+                        break;
+
+                    case "Complete execution":
+                        await CompleteAsync();
                         break;
 
                     case "Cancel execution":
@@ -330,15 +335,8 @@ public class ExecutionMenu(
 
         if (!hasSession.Value)
         {
-            execution.Status = ExecutionStatusEnum.Completed;
-            execution.FinishedAt = DateTime.UtcNow;
-            execution.UpdatedAt = DateTime.UtcNow;
-            execution.SessionDetails = "Session was closed.";
-            await defaultService.UpdateByKey<Execution, int>(0, execution, execution.Id, false);
-            await defaultService.SaveChanges();
-
             AnsiConsole.MarkupLine(
-                $"[yellow]Session {Markup.Escape(execution.SessionName)} was closed. Execution marked as failed.[/]");
+                $"[yellow]Session {Markup.Escape(execution.SessionName)} has ended. Use Complete execution to remove its checkout and finish the execution.[/]");
             Console.ReadKey(true);
             return;
         }
@@ -393,12 +391,78 @@ public class ExecutionMenu(
                 return;
             }
 
+            var cleanup = await executionWorkspace.DeleteAsync(
+                execution.Project.LocalPath,
+                execution.SessionProjectPath);
+            if (!cleanup.Success)
+            {
+                logger.LogError("Failed to remove checkout for execution {ExecutionId}: {Error}", execution.Id, cleanup.Error);
+                AnsiConsole.MarkupLine($"[red]Could not remove the execution checkout: {Markup.Escape(cleanup.Error ?? "Unknown error.")}[/]");
+                Console.ReadKey(true);
+                return;
+            }
+
             execution.Status = ExecutionStatusEnum.Cancelled;
+            execution.FinishedAt = DateTime.UtcNow;
+            execution.UpdatedAt = DateTime.UtcNow;
             await defaultService.UpdateByKey<Execution, int>(0, execution, execution.Id, false);
             await defaultService.SaveChanges();
-            AnsiConsole.MarkupLine("[green]Execution canceled.[/]");
+            AnsiConsole.MarkupLine("[green]Execution canceled, tmux session closed and checkout removed.[/]");
         }
 
+        Console.ReadKey(true);
+    }
+
+    private async Task CompleteAsync()
+    {
+        var executions = await defaultService.Get<Execution>(
+            f => f.Status == ExecutionStatusEnum.Running || f.Status == ExecutionStatusEnum.Pending,
+            new string[] { "Project", "Agent" });
+
+        if (executions.Value.Count() == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]No running or pending executions to complete.[/]");
+            Console.ReadKey(true);
+            return;
+        }
+
+        var execution = AnsiConsole.Prompt(
+            new SelectionPrompt<Execution>()
+                .Title("Select an execution to complete:")
+                .UseConverter(e => Markup.Escape(
+                    $"{e.SessionName} - {e.Project.Name} - {e.Agent.Name} - Issue #{e.IssueNumber}"))
+                .AddChoices(executions.Value));
+
+        if (!AnsiConsole.Confirm("Mark this execution as completed and close its session?"))
+        {
+            Console.ReadKey(true);
+            return;
+        }
+
+        if (!await CloseSessionAsync(execution.SessionName))
+        {
+            Console.ReadKey(true);
+            return;
+        }
+
+        var cleanup = await executionWorkspace.DeleteAsync(
+            execution.Project.LocalPath,
+            execution.SessionProjectPath);
+        if (!cleanup.Success)
+        {
+            logger.LogError("Failed to remove checkout for execution {ExecutionId}: {Error}", execution.Id, cleanup.Error);
+            AnsiConsole.MarkupLine($"[red]Could not remove the execution checkout: {Markup.Escape(cleanup.Error ?? "Unknown error.")}[/]");
+            Console.ReadKey(true);
+            return;
+        }
+
+        execution.Status = ExecutionStatusEnum.Completed;
+        execution.FinishedAt = DateTime.UtcNow;
+        execution.UpdatedAt = DateTime.UtcNow;
+        execution.SessionDetails = "Execution marked as completed by the user.";
+        await defaultService.UpdateByKey<Execution, int>(0, execution, execution.Id, false);
+        await defaultService.SaveChanges();
+        AnsiConsole.MarkupLine("[green]Execution completed, tmux session closed and checkout removed.[/]");
         Console.ReadKey(true);
     }
 
@@ -423,6 +487,17 @@ public class ExecutionMenu(
         {
             if (!await CloseSessionAsync(execution.SessionName))
             {
+                Console.ReadKey(true);
+                return;
+            }
+
+            var cleanup = await executionWorkspace.DeleteAsync(
+                execution.Project.LocalPath,
+                execution.SessionProjectPath);
+            if (!cleanup.Success)
+            {
+                logger.LogError("Failed to remove checkout for execution {ExecutionId}: {Error}", execution.Id, cleanup.Error);
+                AnsiConsole.MarkupLine($"[red]Could not remove the execution checkout: {Markup.Escape(cleanup.Error ?? "Unknown error.")}[/]");
                 Console.ReadKey(true);
                 return;
             }

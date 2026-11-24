@@ -8,7 +8,9 @@ public interface ITmuxExecutor
         string sessionName,
         string workingDirectory,
         string command,
-        string arguments);
+        string arguments,
+        string? startupPrompt = null,
+        string? startupPromptOption = null);
 
     Task<Result> SendInstructionsAsync(string sessionName, string instructions);
 

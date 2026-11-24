@@ -40,11 +40,12 @@ Shared base types (`DefaultEntity`, `DefaultService`, `IDefaultRepository`, `Res
 
 `ExecutionMenu.CreateAsync` calls `ExecutionService.CreateAsync`, which:
 
-1. Loads the project and agent, and checks that the project directory exists.
+1. Loads the project and agent, and ensures the project directory exists.
 2. Saves the execution as `Pending`, then sets the session name `jff-<id>` from the generated ID.
-3. Calls `TmuxExecutor.StartSessionAsync`.
-4. Calls `TmuxExecutor.SendInstructionsAsync` with the prompt from `IssueImplementationPrompt`.
-5. Sets `Running`. On any exception, it sets `Failed` and stores the message in `SessionDetails`.
+3. Clones the repository into `<project.LocalPath>/executions/execution-<id>` as a writable, isolated checkout and saves that path on the execution.
+4. Calls `TmuxExecutor.StartSessionAsync` in the checkout.
+5. Passes the prompt from `IssueImplementationPrompt` through the native startup prompt options for Codex, Claude Code and OpenCode, or calls `TmuxExecutor.SendInstructionsAsync` for other agents. Codex trusts only the execution checkout for that process and uses workspace-write with network access so it can create the requested Pull Request.
+6. Sets `Running`. On any exception, it sets `Failed`, stores the message in `SessionDetails` and attempts to remove the checkout.
 
 ## Conventions
 
@@ -54,7 +55,7 @@ Shared base types (`DefaultEntity`, `DefaultService`, `IDefaultRepository`, `Res
 
 - **External processes:** add arguments through `ProcessStartInfo.ArgumentList`, never by building a shell string. This keeps user input from being parsed by a shell. The agent command is the one deliberate exception: `Command` and `Arguments` are joined and given to `tmux` as one command line.
 - **tmux targets:** always use `ExactTarget(sessionName)`. A plain `-t` matches by prefix, so `jff-1` could hit `jff-12`.
-- **Prompt delivery:** keep the bracketed paste in `SendInstructionsAsync`. Sending the prompt line by line could submit each line as its own message.
+- **Prompt delivery:** Codex, Claude Code and OpenCode accept the prompt at startup to avoid first-run dialogs and the TUI paste/submit race. Keep bracketed paste in `SendInstructionsAsync` for other agents; sending the prompt line by line could submit each line as its own message.
 - **Issue details for agents:** when instructing an executor to read an issue, use `gh issue view <number> --json title,body,labels --jq '{title, body, labels}'` so it gets a consistent title, body and labels payload.
 - **Errors:** infrastructure methods return `Result` or `Result<T>` rather than throwing. Each menu's `ShowMenuAsync` catches exceptions, logs them and returns `Result.Fail`.
 - **Console output:** wrap dynamic text in `Markup.Escape(...)` when using Spectre markup. Issue titles and bodies often contain `[` and `]`, which otherwise break rendering or throw.
@@ -72,9 +73,8 @@ Shared base types (`DefaultEntity`, `DefaultService`, `IDefaultRepository`, `Res
 
 These are known gaps, not bugs to fix in passing. Change them only when the task asks for it, and update the README's **Known limitations** section when you do.
 
-- `ExecutionStatusEnum.Completed` is never assigned, so finished work stays `Running`.
-- **View running** marks an execution `Failed` when its session no longer exists, even if the agent finished successfully.
-- **Cancel execution** only updates the database. It does not kill the `tmux` session.
+- Agent completion is not detected automatically; use **Complete execution** to close the session, remove its checkout and mark it completed.
+- **Cancel execution** closes the `tmux` session, removes its checkout and marks the execution cancelled. Complete and Delete also remove the checkout.
 - `GitHubCli.ListOpenIssuesAsync` returns only issues with the status `Ready` on a GitHub Project board, which requires the `read:project` scope.
 - `IssueImplementationPrompt` hardcodes `main` as the base branch.
 

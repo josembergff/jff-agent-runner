@@ -4,6 +4,7 @@ using domain.interfaces.services;
 using Domain.Interfaces.Infrastructure;
 using Domain.Services;
 using Infra.Context;
+using Infra.GitHub;
 using Infra.Tmux;
 using JffCsharpTools.Application.Interfaces;
 using JffCsharpTools.Application.Services;
@@ -51,6 +52,7 @@ builder.Logging.AddSerilog(Log.Logger);
 // Infrastructure
 builder.Services.AddSingleton<IGitHubCli, GitHubCli>();
 builder.Services.AddSingleton<ITmuxExecutor, TmuxExecutor>();
+builder.Services.AddSingleton<IExecutionWorkspace, ExecutionWorkspace>();
 builder.Services.AddSingleton<IDefaultRepository, DefaultRepository<JffAgentDbContext>>();
 
 // Domain / Services

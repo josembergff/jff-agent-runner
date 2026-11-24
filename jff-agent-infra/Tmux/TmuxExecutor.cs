@@ -16,12 +16,21 @@ public class TmuxExecutor : ITmuxExecutor
         string sessionName,
         string workingDirectory,
         string command,
-        string arguments)
+        string arguments,
+        string? startupPrompt = null,
+        string? startupPromptOption = null)
     {
         var sessionCreated = false;
         var fullCommand = string.IsNullOrWhiteSpace(arguments)
             ? command
             : $"{command} {arguments}";
+        if (!string.IsNullOrWhiteSpace(startupPrompt))
+        {
+            var promptArgument = string.IsNullOrWhiteSpace(startupPromptOption)
+                ? QuoteForShell(startupPrompt)
+                : $"{startupPromptOption} {QuoteForShell(startupPrompt)}";
+            fullCommand = $"{fullCommand} {promptArgument}";
+        }
 
         try
         {
@@ -193,6 +202,9 @@ public class TmuxExecutor : ITmuxExecutor
 
     // A plain -t matches by prefix, so "jff-1" could reach "jff-12" once "jff-1" is gone.
     private static string ExactTarget(string sessionName) => $"={sessionName}:";
+
+    private static string QuoteForShell(string value) =>
+        $"'{value.Replace("'", "'\\''", StringComparison.Ordinal)}'";
 
     private static async Task<string> ExecuteAsync(
         params string[] arguments)
