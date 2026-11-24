@@ -243,6 +243,7 @@ Go to **Executions → Add execution**, select the project, agent and issue, rev
 | --- | --- |
 | List executions | Shows all executions, with optional filters by agent or project, or running only |
 | View running | Shows a snapshot of a session's terminal, up to the last 100 lines of scrollback |
+| Send Enter | Sends an Enter key to a selected running or pending tmux session |
 | Complete execution | Closes the session, removes its checkout and marks the execution as completed |
 | Cancel execution | Closes the session, removes its checkout and marks it as cancelled |
 | Delete execution | Closes any remaining session, removes the checkout and deletes the execution record |
@@ -255,7 +256,7 @@ tmux attach -t jff-12
 
 Detach with `Ctrl+B`, then `D`. Do not exit the agent unless you mean to end the session.
 
-The prompt tells agents to proceed without routine questions and create the Pull Request. They should ask only when an essential requirement cannot reasonably be inferred or an external blocker prevents progress. Use **View terminal** to inspect output; **Complete** closes the session and removes its checkout.
+The prompt tells agents to proceed without routine questions and create the Pull Request. They should ask only when an essential requirement cannot reasonably be inferred or an external blocker prevents progress. Use **View terminal** to inspect output and **Send Enter** to press Enter in the selected session; on a prompt, this confirms the currently selected option. **Complete** closes the session and removes its checkout.
 
 ### Execution statuses
 

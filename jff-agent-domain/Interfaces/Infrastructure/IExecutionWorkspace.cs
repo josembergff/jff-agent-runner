@@ -7,5 +7,7 @@ public interface IExecutionWorkspace
 {
     Task<Result<string>> CreateAsync(Project project, int executionId);
 
+    Task<Result> TrustCodexCheckoutAsync(string projectPath, string workspacePath);
+
     Task<Result> DeleteAsync(string projectPath, string workspacePath);
 }

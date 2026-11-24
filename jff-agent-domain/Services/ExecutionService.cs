@@ -77,6 +77,10 @@ public class ExecutionService : DefaultService, IExecutionService
 
             if (isCodex)
             {
+                var trustResult = await executionWorkspace.TrustCodexCheckoutAsync(project.LocalPath, executionPath);
+                if (!trustResult.Success)
+                    throw new DomainException($"Could not trust the Codex execution checkout: {trustResult.Error}");
+
                 var isCodexExec = agentArguments
                     .Split(' ', StringSplitOptions.RemoveEmptyEntries)
                     .Any(argument => string.Equals(argument, "exec", StringComparison.Ordinal));
@@ -108,11 +112,7 @@ public class ExecutionService : DefaultService, IExecutionService
                 agentArguments = AppendFlagIfMissing(agentArguments, "--auto");
             }
 
-            // Codex asks whether each new checkout is trusted before it accepts a prompt.
-            // Scope trust to this isolated checkout and process; do not modify global
-            // configuration or authentication files.
-            if (isCodex)
-                agentArguments = AddCodexTrustOverride(agentArguments, executionPath);
+            // Codex trust is configured by the workspace service for this checkout only.
 
             // 6. Start agent session
             var resultTmux = await tmuxExecutor.StartSessionAsync(
@@ -176,21 +176,6 @@ public class ExecutionService : DefaultService, IExecutionService
 
             return Result.Fail(ex);
         }
-    }
-
-    private static string AddCodexTrustOverride(string arguments, string executionPath)
-    {
-        var tomlPath = executionPath
-            .Replace("\\", "\\\\", StringComparison.Ordinal)
-            .Replace("\"", "\\\"", StringComparison.Ordinal)
-            .Replace("\n", "\\n", StringComparison.Ordinal)
-            .Replace("\r", "\\r", StringComparison.Ordinal)
-            .Replace("\t", "\\t", StringComparison.Ordinal);
-        var configValue = $"projects.\"{tomlPath}\".trust_level=\"trusted\"";
-        var trustOverride = $"--config {QuoteForShell(configValue)}";
-        return string.IsNullOrWhiteSpace(arguments)
-            ? trustOverride
-            : $"{arguments} {trustOverride}";
     }
 
     private static string AppendOptionIfMissing(string arguments, string option, string value) =>

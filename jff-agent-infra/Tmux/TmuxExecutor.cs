@@ -118,6 +118,19 @@ public class TmuxExecutor : ITmuxExecutor
         }
     }
 
+    public async Task<Result> SendEnterAsync(string sessionName)
+    {
+        try
+        {
+            await ExecuteAsync("send-keys", "-t", ExactTarget(sessionName), "Enter");
+            return Result.Ok();
+        }
+        catch (Exception ex)
+        {
+            return Result.Fail(ex);
+        }
+    }
+
     // There is no generic signal that an agent is ready, so it is considered open when its
     // screen has content and stops changing. An agent that keeps animating gets the
     // instructions at the timeout, as terminal applications usually buffer their input.
