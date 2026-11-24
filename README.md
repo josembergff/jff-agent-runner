@@ -6,15 +6,17 @@ A terminal app that delegates GitHub Issues to the AI coding agents already inst
 
 jff-agent only orchestrates. It does not install, authenticate or configure anything.
 
-1. You register **projects** (a GitHub repository and a local clone) and **agents** (a CLI command such as `claude`).
+1. You register **projects** (a GitHub repository and a local directory) and **agents** (a CLI command such as `claude`).
 2. You start an **execution** by choosing a project, an agent and an issue.
-3. jff-agent opens a detached `tmux` session named `jff-<id>` in the project directory, starts the agent and pastes in a prompt that tells it to:
+3. jff-agent creates a fresh writable clone for the execution under `<project-local-path>/executions/execution-<id>`, then opens a detached `tmux` session named `jff-<id>` in that checkout. Codex receives its prompt at startup; other agents receive it as a bracketed paste once their terminal is ready. The prompt tells the agent to:
    - read the issue with `gh issue view <number> --json title,body,labels --jq '{title, body, labels}'`
    - follow the repository's `AGENT_INSTRUCTIONS.md` and `AGENTS.md`
    - work on a branch named `agent/<issue-number>`, created from `main`
    - implement the issue, then run the relevant checks and build
    - push the branch and open a Pull Request to `main` with `Closes #<issue-number>`
 4. You follow the execution from the menu, or attach to the session to talk to the agent directly.
+
+Registering a project creates only its directory; it does not clone the repository. Each execution clones into a separate subdirectory, so agents do not share a working tree and can create branches or commits independently. The checkout path is saved with the execution. Cancel, Complete and Delete close the tmux session and remove the checkout; failed starts also clean it up automatically. The execution record remains after Cancel or Complete, while Delete removes the record too.
 
 The `jff-agent-runner-web` package provides the same project, agent and execution management through a Blazor web interface on port `3031`. Both applications use the same SQLite database and run GitHub CLI, tmux and configured agent commands as the Linux user that starts them.
 
@@ -32,7 +34,7 @@ gh issue view 34 --json title,body,labels --jq '{title, body, labels}'
 
 jff-agent asks for no keys, tokens or licenses, and it stores none. Every credential stays with the tool that owns it (`gh`, `claude`, `codex` and so on), and you set those up yourself on the server. jff-agent only asks an agent to implement an issue in a repository and shows you the status.
 
-Agents still run with the full access of the Linux user that started jff-agent, and issue text is untrusted input to them. This matters most if you let agents skip their permission prompts, so:
+Agents run as the Linux user that started jff-agent; no root or `sudo` access is required. Codex is limited to workspace writes but gets outbound network access to read issues and push the Pull Request. Claude Code and OpenCode run with their automatic permission modes, which can execute commands with that Linux user's access. Issue text is untrusted input, so:
 
 - Run jff-agent under a dedicated Linux user with access only to what the agents need.
 - Delegate only issues you have read, especially in repositories where outsiders can open issues.
@@ -201,9 +203,7 @@ Go to **Projects → Add project**, choose a repository from the list of reposit
 
 A relative path is placed under `~/jff-agent-runner/git-repositories/`.
 
-jff-agent creates the directory and clones the repository into it with `gh repo clone`. The project is saved only if the clone succeeds. If it fails, the error is logged and shown, and nothing is saved.
-
-The directory must be new or empty, so a folder that already holds a clone cannot be registered.
+jff-agent creates the directory and saves the project. The repository is cloned into a new `executions/execution-<id>` subdirectory each time an execution starts. The local path can already exist; existing files are preserved.
 
 ### 2. Add an agent
 
@@ -215,17 +215,19 @@ Go to **Agents → Add agent** and fill in:
 | Command | The executable to start |
 | Arguments | Optional flags, appended to the command |
 
-The agent must start in **interactive mode**, because jff-agent types the prompt into its terminal. Print or one-shot modes such as `claude -p` will not work.
+Use an interactive CLI command; print or one-shot modes such as `claude -p` will not work. For Codex, Claude Code and OpenCode, jff-agent supplies the issue prompt at startup and enables unattended execution. Other CLIs receive the prompt as a bracketed paste and must be configured with their own unattended permission flags in **Arguments**.
 
-An agent that stops at a permission prompt waits there until you attach and answer it. For unattended runs, configure your agent to proceed on its own, after reading [Security model](#security-model). These are starting points, so check them against `--help` for your installed version:
+The runner configures unattended execution for Codex, Claude Code and OpenCode. Other CLIs need their own unattended arguments. These are starting points, so check them against `--help` for your installed version:
 
 | Agent | Command | Arguments |
 | --- | --- | --- |
-| Claude Code | `claude` | `--dangerously-skip-permissions` |
-| Codex | `codex` | `--dangerously-bypass-approvals-and-sandbox` |
-| OpenCode with Ollama | `opencode` | `--model ollama/<model>` (permissions are set in OpenCode's own config) |
+| Claude Code | `claude` | `--dangerously-skip-permissions` (added automatically if missing) |
+| Codex | `codex` | `--model gpt-6-luna --config model_reasoning_effort=low` (approval, workspace-write sandbox, network access and per-checkout trust are set automatically) |
+| OpenCode | `opencode` | `--model ollama/<model>` (add the model you use; `--auto` is added automatically) |
 
-Also open each agent once by hand inside a new project directory. Some CLIs show a first-run dialog, such as a folder trust prompt, and that dialog would receive the pasted prompt instead of the agent.
+Codex trust is scoped to the execution checkout for that launch; the runner does not edit the user's Codex configuration or require `sudo`. Claude Code and OpenCode receive their prompt through native startup options. Future or other CLIs need their own unattended arguments configured here; their permission and first-run trust behavior is CLI-specific.
+
+Executions run as the same Linux user that starts jff-agent. That user must be able to write to the project directory and must have authenticated `gh` and agent CLIs; no `sudo` access is needed to create or clean up execution checkouts.
 
 ### 3. Prepare the issue
 
@@ -241,8 +243,9 @@ Go to **Executions → Add execution**, select the project, agent and issue, rev
 | --- | --- |
 | List executions | Shows all executions, with optional filters by agent or project, or running only |
 | View running | Shows a snapshot of a session's terminal, up to the last 100 lines of scrollback |
-| Cancel execution | Marks a running execution as cancelled |
-| Delete execution | Removes the record of an execution that is not running |
+| Complete execution | Closes the session, removes its checkout and marks the execution as completed |
+| Cancel execution | Closes the session, removes its checkout and marks it as cancelled |
+| Delete execution | Closes any remaining session, removes the checkout and deletes the execution record |
 
 To watch live or answer a question from the agent, attach to its session from a shell. Replace `12` with the execution ID:
 
@@ -252,7 +255,7 @@ tmux attach -t jff-12
 
 Detach with `Ctrl+B`, then `D`. Do not exit the agent unless you mean to end the session.
 
-The prompt tells agents to proceed without routine questions. They should ask only when an essential requirement cannot reasonably be inferred or an external blocker prevents progress. An execution that appears stuck may be running checks or waiting on a real blocker; attach to its session to inspect it.
+The prompt tells agents to proceed without routine questions and create the Pull Request. They should ask only when an essential requirement cannot reasonably be inferred or an external blocker prevents progress. Use **View terminal** to inspect output; **Complete** closes the session and removes its checkout.
 
 ### Execution statuses
 
@@ -260,17 +263,15 @@ The prompt tells agents to proceed without routine questions. They should ask on
 | --- | --- |
 | Pending | The record is saved and the session is starting |
 | Running | The agent received the prompt |
-| Failed | The session could not start, the prompt could not be delivered, or **View running** found the session gone |
-| Cancelled | You cancelled it from the menu |
-| Completed | Defined, but not set by the app yet |
+| Failed | The session could not start or the prompt could not be delivered |
+| Cancelled | You cancelled it from the menu; its checkout is removed |
+| Completed | You marked it complete; its tmux session and checkout were removed |
 
 ## Known limitations
 
 - **An existing cached Blazor runtime can break the web UI after a package update.** If the issue selector does not load, clear the browser and reverse proxy/CDN cache for `/_framework/blazor.web.js` and reload the page.
-- **Finished work still shows as Running.** jff-agent does not detect that an agent has finished. Check for the Pull Request on GitHub, or attach to the session.
-- **A successful agent can be marked Failed.** If the session has closed when you open **View running**, the execution is marked Failed even if the agent opened its Pull Request first.
-- **Cancelling does not stop the agent.** It only changes the status. To stop the agent, end its session with `tmux kill-session -t "=jff-12"`.
-- **Finished sessions stay open.** An interactive agent keeps its session after finishing, so close old sessions with the same command. `tmux ls` lists them.
+- **Agent completion is not detected automatically.** Use **Complete execution** in the terminal or web interface to close the session, remove the checkout and mark the execution complete.
+- **A completed execution record remains in the list.** Use **Delete execution** to remove the record after its checkout has already been cleaned up.
 - **`main` is assumed.** The prompt always branches from and targets `main`, so repositories with another default branch are not supported yet.
 
 ## Data and logs
@@ -280,15 +281,16 @@ The prompt tells agents to proceed without routine questions. They should ask on
 | Database (SQLite), including an error log table named `logs` | `~/.config/jff-agent-runner/database.db` |
 | Error log files | `logs/` under the directory you started the app from |
 | Default location for project directories | `~/jff-agent-runner/git-repositories/` |
+| Per-execution writable checkouts | An `executions/` subdirectory inside each project's local path |
 
 ## Troubleshooting
 
 | Symptom | What to check |
 | --- | --- |
 | An error, or no issues, when selecting an issue | Is the issue open and **Ready** on a Project board? Does `gh auth status` list the `read:project` scope? |
-| "Error cloning repository" when adding a project | Is the URL right? Does `gh auth status` show you logged in with access to the repository? Is the local directory new or empty? |
-| "Project directory does not exist" | The local directory was removed. Recreate and clone it. |
-| The agent starts, but `gh` or `git` commands fail | The directory is empty or is not a clone of the repository. |
+| Could not load GitHub repositories | Check that `gh auth status` shows an authenticated account with access to the repositories. |
+| Could not create the execution checkout | Check that the app user can write inside the project's local path and that `gh auth status` grants access to the repository. |
+| The agent starts, but `gh` or `git` commands fail | Check the app user's GitHub CLI authentication and network access from the execution environment. |
 | "Agent command exited with status..." | The command or arguments are wrong, or the agent is not logged in. Run the same command by hand in the project directory. |
 | The prompt sits unsubmitted or went into a dialog | Attach to the session and answer the dialog, then open the agent once by hand to clear its first-run prompts. |
 

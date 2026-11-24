@@ -117,25 +117,6 @@ public class ProjectMenu(IDefaultService defaultService, IGitHubCli gitHubCli, I
 
         project.LocalPath = verifyAndCreateDirectory(project.LocalPath);
 
-        var cloneResult = await AnsiConsole.Status()
-            .StartAsync(
-                "Cloning repository...",
-                _ => gitHubCli.CloneRepositoryAsync(project.RepositoryUrl, project.LocalPath));
-
-        if (!cloneResult.Success)
-        {
-            logger.LogError(
-                "Failed to clone {RepositoryUrl} into {LocalPath}: {Error}",
-                project.RepositoryUrl,
-                project.LocalPath,
-                cloneResult.Error);
-            AnsiConsole.MarkupLine(
-                $"[red]Error cloning repository: {Markup.Escape(cloneResult.Error ?? "Unknown error.")}[/]");
-            AnsiConsole.MarkupLine("[yellow]The project was not saved.[/]");
-            Console.ReadKey();
-            return;
-        }
-
         await defaultService.Create<Project>(0, project, false);
         await defaultService.SaveChanges();
 
